@@ -11,36 +11,36 @@ const colors = {
   gold: '#FFD700', // Dourado da estrela
 };
 
-// Dados do banner
+// Dados do banner - AGORA COM IMAGENS LOCAIS
 const bannerSlides = [
   {
     id: 1,
-    image: "https://images.unsplash.com/photo-1489599809505-fc6c1e1e8f6a?w=1920&h=400&fit=crop",
+    image: "/images/banner-1.jpg", // Coloque sua imagem em public/images/banner-1.jpg
     title: "As Melhores Críticas de Cinema",
     subtitle: "Análises sinceras sem complicação"
   },
   {
     id: 2,
-    image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=1920&h=400&fit=crop",
+    image: "/images/banner-2.jpg", // Coloque sua imagem em public/images/banner-2.jpg
     title: "Séries Imperdíveis da Temporada",
     subtitle: "Descubra suas próximas maratonas"
   },
   {
     id: 3,
-    image: "https://images.unsplash.com/photo-1571847141223-68e3fafe0922?w=1920&h=400&fit=crop",
+    image: "/images/banner-3.jpg", // Coloque sua imagem em public/images/banner-3.jpg
     title: "Notícias Quentes do Mundo do Entretenimento",
     subtitle: "Fique por dentro das novidades"
   }
 ];
 
-// Dados de exemplo
+// Dados de exemplo - AGORA COM IMAGENS LOCAIS
 const postsData = [
   {
     id: 1,
     title: "Os Donos do Jogo: Netflix Acerta na Máfia Brasileira",
     category: "séries",
     type: "Série",
-    image: "https://images.unsplash.com/photo-1571847141223-68e3fafe0922?w=800&q=80",
+    image: "/images/donos-do-jogo.jpg", // Coloque em public/images/donos-do-jogo.jpg
     excerpt: "Produção brasileira de altíssima qualidade traz todos os elementos clássicos de tramas de máfia: ação, tiroteios, ascensão ao poder e conflitos familiares...",
     rating: 4,
     date: "2024-11-19",
@@ -71,7 +71,7 @@ No geral, Os Donos do Jogo é uma série envolvente, bem produzida e com persona
     title: "Frankenstein: Del Toro Entrega Obra-Prima do Terror",
     category: "críticas",
     type: "Filme",
-    image: "https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?w=800&q=80",
+    image: "/images/frankenstein.jpg", // Coloque em public/images/frankenstein.jpg
     excerpt: "Adaptação escrita e dirigida por Guillermo del Toro começa de forma intensa, com cenas de violência bem construídas e uma filmagem ampla que reforça o quão assustadora é a criatura...",
     rating: 5,
     date: "2024-11-18",
@@ -101,7 +101,7 @@ No geral, é um terror gore e emocional, que te prende do começo ao fim. Del To
     title: "Meu Ayrton: Galisteu Conta Sua Versão da História",
     category: "críticas",
     type: "Documentário",
-    image: "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=800&q=80",
+    image: "/images/meu-ayrton.jpg", // Coloque em public/images/meu-ayrton.jpg
     excerpt: "Relato sincero e emocional sobre uma relação pouco explorada. Bastidores íntimos da vida de Ayrton Senna pelos olhos da mulher que esteve ao lado dele até o fim...",
     rating: 4,
     date: "2024-11-16",
@@ -127,7 +127,7 @@ Já o segundo episódio parte para a "lavagem de roupa suja", revelando desaven�
     title: "Oscar 2025: Primeiras Apostas e Surpresas",
     category: "notícias",
     type: "Notícia",
-    image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800&q=80",
+    image: "/images/oscar-2025.jpg", // Coloque em public/images/oscar-2025.jpg
     excerpt: "Com a temporada de premiações se aproximando, confira os filmes que prometem dominar a corrida...",
     date: "2024-11-15",
     readTime: "5 min"
@@ -137,7 +137,7 @@ Já o segundo episódio parte para a "lavagem de roupa suja", revelando desaven�
     title: "Barbie: Mais Que Rosa, Um Fenômeno Cultural",
     category: "críticas",
     type: "Filme",
-    image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&q=80",
+    image: "/images/barbie.jpg", // Coloque em public/images/barbie.jpg
     excerpt: "Greta Gerwig transforma um brinquedo icônico em uma reflexão inteligente sobre feminilidade e sociedade...",
     rating: 4,
     date: "2024-11-08",
@@ -148,7 +148,7 @@ Já o segundo episódio parte para a "lavagem de roupa suja", revelando desaven�
     title: "Scorsese Anuncia Novo Projeto Histórico",
     category: "notícias",
     type: "Notícia",
-    image: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=800&q=80",
+    image: "/images/scorsese.jpg", // Coloque em public/images/scorsese.jpg
     excerpt: "O lendário diretor revela detalhes sobre seu próximo filme épico ambientado no século XIX...",
     date: "2024-11-05",
     readTime: "4 min"
@@ -351,7 +351,7 @@ const Header = ({ currentPage, setCurrentPage }) => (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer' }} onClick={() => setCurrentPage('home')}>
           <img 
-            src="https://i.ibb.co/Z8vQYgN/logo-minha-critica.png" 
+            src="/images/logo-minha-critica.png" // Coloque em public/images/logo-minha-critica.png
             alt="Minha Crítica Não Especializada" 
             style={{
               height: '70px',
@@ -691,7 +691,7 @@ const Footer = () => (
   }}>
     <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
       <img 
-        src="https://i.ibb.co/Z8vQYgN/logo-minha-critica.png" 
+        src="/images/logo-minha-critica.png" // Coloque em public/images/logo-minha-critica.png
         alt="Minha Crítica Não Especializada" 
         style={{
           height: '100px',
