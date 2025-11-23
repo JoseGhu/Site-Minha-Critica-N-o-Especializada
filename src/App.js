@@ -1,32 +1,26 @@
 import React, { useState, useEffect } from 'react';
 
-// Configuração da API - Adaptada para produção
+// Configuração da API - Conectando com seu backend
 const API_URL = process.env.NODE_ENV === 'development' 
   ? 'http://localhost:3001/api' 
   : 'https://seu-backend.railway.app/api';
 
-// Funções da API com fallback robusto
+// Funções da API otimizadas para MySQL
 const api = {
   async getPosts() {
-    if (process.env.NODE_ENV !== 'development') {
-      const localPosts = localStorage.getItem('minha-critica-posts');
-      if (localPosts && JSON.parse(localPosts).length > 0) {
-        console.log('📦 Carregando posts do localStorage...');
-        return JSON.parse(localPosts);
-      }
-    }
-    
     try {
-      console.log('🌐 Tentando conectar com a API...');
+      console.log('🌐 Conectando com a API MySQL...');
       const res = await fetch(`${API_URL}/posts`);
       if (!res.ok) throw new Error('Erro ao buscar posts');
       const data = await res.json();
       
+      // Salva no localStorage como backup
       localStorage.setItem('minha-critica-posts', JSON.stringify(data));
-      console.log('✅ Posts carregados da API e salvos no cache');
+      console.log('✅ Posts carregados do MySQL!');
       return data;
     } catch (error) {
-      console.log('❌ Erro na API, usando fallback...');
+      console.log('❌ Erro na API, usando fallback localStorage...');
+      // Fallback para localStorage
       const localPosts = localStorage.getItem('minha-critica-posts');
       if (localPosts && JSON.parse(localPosts).length > 0) {
         return JSON.parse(localPosts);
@@ -36,17 +30,50 @@ const api = {
   },
   
   async login(username, password) {
-    try {
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      if (!res.ok) throw new Error('Usuário ou senha inválidos');
-      return res.json();
-    } catch (error) {
-      throw new Error('Erro de conexão. Modo offline ativado.');
-    }
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    if (!res.ok) throw new Error('Usuário ou senha inválidos');
+    return res.json();
+  },
+
+  async createPost(postData, token) {
+    const res = await fetch(`${API_URL}/posts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(postData)
+    });
+    if (!res.ok) throw new Error('Erro ao criar post');
+    return res.json();
+  },
+
+  async updatePost(postId, postData, token) {
+    const res = await fetch(`${API_URL}/posts/${postId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(postData)
+    });
+    if (!res.ok) throw new Error('Erro ao atualizar post');
+    return res.json();
+  },
+
+  async deletePost(postId, token) {
+    const res = await fetch(`${API_URL}/posts/${postId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (!res.ok) throw new Error('Erro ao excluir post');
+    return res.json();
   }
 };
 
@@ -112,9 +139,68 @@ function App() {
   };
 
   const loadNewsletterSubscribers = () => {
-    // Carregar subscribers do localStorage
     const subscribers = localStorage.getItem('newsletter-subscribers');
     return subscribers ? JSON.parse(subscribers) : [];
+  };
+
+  // Componente SEO Head
+  const SEOHead = () => {
+    const currentPost = selectedPost || (posts.length > 0 ? posts[0] : null);
+    
+    const metaTags = {
+      title: currentPost 
+        ? `${currentPost.title} - Minha Crítica Não Especializada`
+        : 'Minha Crítica Não Especializada - Opiniões Sinceras sobre Cinema e Séries',
+      
+      description: currentPost 
+        ? currentPost.excerpt
+        : 'Opiniões sinceras sobre cinema e séries, sem frescura. Críticas, análises e notícias do mundo do entretenimento.',
+      
+      keywords: currentPost
+        ? `crítica, ${currentPost.type}, ${currentPost.category}, filme, série, análise`
+        : 'crítica, cinema, séries, filmes, análise, entretenimento, opinião',
+      
+      url: window.location.href,
+      image: currentPost?.image || '/images/logo-minha-critica.png'
+    };
+
+    // Em uma aplicação real, você usaria React Helmet para injetar no head
+    // Por enquanto, vamos apenas retornar um div invisível com as informações
+    return (
+      <div style={{ display: 'none' }}>
+        {/* Meta tags que seriam injetadas no head em uma aplicação real */}
+        <title>{metaTags.title}</title>
+        <meta name="description" content={metaTags.description} />
+        <meta name="keywords" content={metaTags.keywords} />
+        <meta property="og:title" content={metaTags.title} />
+        <meta property="og:description" content={metaTags.description} />
+        <meta property="og:image" content={metaTags.image} />
+        <meta property="og:url" content={metaTags.url} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={metaTags.title} />
+        <meta name="twitter:description" content={metaTags.description} />
+        <meta name="twitter:image" content={metaTags.image} />
+        
+        {/* Schema.org markup for Google */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Blog",
+            "name": "Minha Crítica Não Especializada",
+            "description": metaTags.description,
+            "url": metaTags.url,
+            "publisher": {
+              "@type": "Organization",
+              "name": "Minha Crítica Não Especializada",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "/images/logo-minha-critica.png"
+              }
+            }
+          })}
+        </script>
+      </div>
+    );
   };
 
   // Banner de Slides
@@ -123,19 +209,22 @@ function App() {
     
     const slides = [
       {
-        title: "Críticas Sem Frescura",
+        title: "🎬 Críticas Sem Frescura",
         description: "Opiniões sinceras sobre os lançamentos do cinema",
         background: "linear-gradient(135deg, #D32F2F 0%, #1A1A2E 100%)",
+        emoji: "🎥"
       },
       {
-        title: "Séries Imperdíveis",
+        title: "📺 Séries Imperdíveis",
         description: "Análises detalhadas das melhores séries",
         background: "linear-gradient(135deg, #4DB6AC 0%, #1A1A2E 100%)",
+        emoji: "📺"
       },
       {
-        title: "Notícias Quentes",
+        title: "📰 Notícias Quentes",
         description: "Fique por dentro do mundo do entretenimento",
         background: "linear-gradient(135deg, #FFA726 0%, #1A1A2E 100%)",
+        emoji: "📰"
       }
     ];
 
@@ -252,638 +341,6 @@ function App() {
           ))}
         </div>
       </section>
-    );
-  };
-
-  // Sistema de Admin com Gerenciamento de Posts
-  const AdminPanel = () => {
-    const [token, setToken] = useState(localStorage.getItem('admin_token') || '');
-    const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('admin_token'));
-    const [form, setForm] = useState({ 
-      title: '', 
-      category: 'críticas', 
-      type: 'Filme', 
-      image: '', 
-      excerpt: '', 
-      rating: '', 
-      readTime: '', 
-      fullContent: '', 
-      highlights: '', 
-      lowlights: '' 
-    });
-    const [adminLoading, setAdminLoading] = useState(false);
-    const [editingPost, setEditingPost] = useState(null);
-
-    const handleLogin = async () => {
-      if (adminLogin.username === 'admin' && adminLogin.password === 'admin123') {
-        const offlineToken = 'offline-token-' + Date.now();
-        localStorage.setItem('admin_token', offlineToken);
-        setToken(offlineToken);
-        setIsLoggedIn(true);
-        setAdminLogin({ username: '', password: '' });
-        return;
-      }
-
-      try {
-        setAdminLoading(true);
-        const data = await api.login(adminLogin.username, adminLogin.password);
-        localStorage.setItem('admin_token', data.token);
-        setToken(data.token);
-        setIsLoggedIn(true);
-        setAdminLogin({ username: '', password: '' });
-      } catch (e) { 
-        alert('❌ ' + e.message); 
-      } finally { 
-        setAdminLoading(false); 
-      }
-    };
-
-    const handleLogout = () => { 
-      localStorage.removeItem('admin_token'); 
-      setToken(''); 
-      setIsLoggedIn(false); 
-    };
-
-    const handleSave = async () => {
-      if (!form.title || !form.excerpt) { 
-        alert('Preencha título e resumo!'); 
-        return; 
-      }
-      try {
-        setAdminLoading(true);
-        const postData = {
-          ...form, 
-          rating: form.rating ? parseFloat(form.rating) : null,
-          date: new Date().toISOString().split('T')[0],
-          highlights: form.highlights ? form.highlights.split('\n').filter(h => h.trim()) : [],
-          lowlights: form.lowlights ? form.lowlights.split('\n').filter(l => l.trim()) : []
-        };
-        
-        let updatedPosts;
-        if (editingPost) {
-          // Editar post existente
-          updatedPosts = posts.map(post => 
-            post.id === editingPost.id 
-              ? { ...post, ...postData, id: editingPost.id }
-              : post
-          );
-          setEditingPost(null);
-        } else {
-          // Criar novo post
-          const newPost = {
-            id: Date.now(),
-            ...postData
-          };
-          updatedPosts = [...posts, newPost];
-        }
-        
-        setPosts(updatedPosts);
-        localStorage.setItem('minha-critica-posts', JSON.stringify(updatedPosts));
-        
-        alert(`✅ Post ${editingPost ? 'atualizado' : 'criado'} com sucesso!`);
-        setForm({ 
-          title: '', category: 'críticas', type: 'Filme', image: '', excerpt: '', 
-          rating: '', readTime: '', fullContent: '', highlights: '', lowlights: '' 
-        });
-      } catch (e) { 
-        alert('❌ ' + e.message); 
-      } finally { 
-        setAdminLoading(false); 
-      }
-    };
-
-    const handleEdit = (post) => {
-      setEditingPost(post);
-      setForm({
-        title: post.title,
-        category: post.category,
-        type: post.type,
-        image: post.image || '',
-        excerpt: post.excerpt,
-        rating: post.rating || '',
-        readTime: post.readTime || '',
-        fullContent: post.fullContent || '',
-        highlights: post.highlights ? post.highlights.join('\n') : '',
-        lowlights: post.lowlights ? post.lowlights.join('\n') : ''
-      });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const handleDelete = (postId) => {
-      if (window.confirm('Tem certeza que deseja excluir este post?')) {
-        const updatedPosts = posts.filter(post => post.id !== postId);
-        setPosts(updatedPosts);
-        localStorage.setItem('minha-critica-posts', JSON.stringify(updatedPosts));
-        alert('✅ Post excluído com sucesso!');
-      }
-    };
-
-    const cancelEdit = () => {
-      setEditingPost(null);
-      setForm({ 
-        title: '', category: 'críticas', type: 'Filme', image: '', excerpt: '', 
-        rating: '', readTime: '', fullContent: '', highlights: '', lowlights: '' 
-      });
-    };
-
-    // TELA DE LOGIN DO ADMIN
-    if (!isLoggedIn) {
-      return (
-        <div style={{ 
-          minHeight: '100vh', 
-          background: darkMode ? '#0a0a1a' : '#FFF8DC', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          fontFamily: "'Poppins', sans-serif" 
-        }}>
-          <div style={{ 
-            background: darkMode ? '#1a1a2e' : 'white', 
-            padding: '2.5rem', 
-            borderRadius: '20px', 
-            boxShadow: '0 10px 40px rgba(0,0,0,0.15)', 
-            maxWidth: '400px', 
-            width: '100%' 
-          }}>
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <div style={{ fontSize: '3rem' }}>🔐</div>
-              <h1 style={{ 
-                fontSize: '1.8rem', 
-                fontWeight: '900', 
-                color: darkMode ? 'white' : '#1A1A2E', 
-                marginTop: '1rem' 
-              }}>
-                Painel Admin
-              </h1>
-              <p style={{ color: darkMode ? '#cccccc' : '#666666' }}>Minha Crítica Não Especializada</p>
-            </div>
-            
-            <input 
-              type="text" 
-              placeholder="Usuário" 
-              value={adminLogin.username}
-              onChange={e => setAdminLogin({...adminLogin, username: e.target.value})} 
-              style={{ 
-                width: '100%', 
-                padding: '0.8rem', 
-                border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
-                borderRadius: '8px', 
-                fontSize: '1rem', 
-                marginBottom: '1rem',
-                background: darkMode ? '#2d2d44' : 'white',
-                color: darkMode ? 'white' : '#333'
-              }} 
-            />
-            <input 
-              type="password" 
-              placeholder="Senha" 
-              value={adminLogin.password}
-              onChange={e => setAdminLogin({...adminLogin, password: e.target.value})}
-              onKeyPress={e => e.key === 'Enter' && handleLogin()} 
-              style={{ 
-                width: '100%', 
-                padding: '0.8rem', 
-                border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
-                borderRadius: '8px', 
-                fontSize: '1rem', 
-                marginBottom: '1rem',
-                background: darkMode ? '#2d2d44' : 'white',
-                color: darkMode ? 'white' : '#333'
-              }} 
-            />
-            
-            <button 
-              onClick={handleLogin} 
-              disabled={adminLoading} 
-              style={{ 
-                width: '100%', 
-                background: '#D32F2F', 
-                color: 'white', 
-                border: 'none', 
-                padding: '1rem', 
-                borderRadius: '10px', 
-                fontSize: '1.1rem', 
-                fontWeight: '700', 
-                cursor: 'pointer', 
-                marginBottom: '1rem' 
-              }}
-            >
-              {adminLoading ? '⏳ Entrando...' : '🔐 Entrar'}
-            </button>
-            
-            <button 
-              onClick={() => setShowAdmin(false)} 
-              style={{ 
-                width: '100%', 
-                background: '#999', 
-                color: 'white', 
-                border: 'none', 
-                padding: '0.8rem', 
-                borderRadius: '10px', 
-                fontSize: '1rem', 
-                cursor: 'pointer' 
-              }}
-            >
-              ← Voltar ao Blog
-            </button>
-            
-            <p style={{ marginTop: '1.5rem', fontSize: '0.85rem', color: '#999', textAlign: 'center' }}>
-              Usuário: admin | Senha: admin123
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    // PAINEL ADMIN LOGADO
-    return (
-      <div style={{ 
-        minHeight: '100vh', 
-        background: darkMode ? '#0a0a1a' : '#FFF8DC', 
-        fontFamily: "'Poppins', sans-serif" 
-      }}>
-        <header style={{ 
-          background: 'linear-gradient(135deg, #D32F2F 0%, #1A1A2E 100%)', 
-          padding: '1rem 2rem', 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem'
-        }}>
-          <div>
-            <h1 style={{ color: 'white', fontSize: '1.5rem', fontWeight: '900' }}>
-              🎬 Painel Admin - Minha Crítica
-            </h1>
-            <p style={{ color: '#FFA726', fontSize: '0.9rem', marginTop: '0.2rem' }}>
-              {posts.length} posts • {error ? '🔴 Modo Offline' : '🟢 Conectado'}
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={() => setShowAdmin(false)} style={{ 
-              background: '#4DB6AC', 
-              color: 'white', 
-              border: 'none', 
-              padding: '0.6rem 1.2rem', 
-              borderRadius: '8px', 
-              cursor: 'pointer', 
-              fontWeight: '700' 
-            }}>
-              ← Voltar ao Blog
-            </button>
-            <button onClick={handleLogout} style={{ 
-              background: '#FFA726', 
-              color: 'white', 
-              border: 'none', 
-              padding: '0.6rem 1.2rem', 
-              borderRadius: '8px', 
-              cursor: 'pointer', 
-              fontWeight: '700'
-            }}>
-              Sair
-            </button>
-          </div>
-        </header>
-        
-        <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
-          {/* FORMULÁRIO DE CRIAÇÃO/EDIÇÃO */}
-          <div style={{ 
-            background: darkMode ? '#1a1a2e' : 'white', 
-            borderRadius: '15px', 
-            padding: '2rem', 
-            marginBottom: '2rem', 
-            boxShadow: '0 4px 15px rgba(0,0,0,0.1)' 
-          }}>
-            <h2 style={{ 
-              fontSize: '1.5rem', 
-              fontWeight: '800', 
-              color: darkMode ? 'white' : '#1A1A2E', 
-              marginBottom: '1.5rem' 
-            }}>
-              {editingPost ? '✏️ Editar Post' : '➕ Criar Novo Post'}
-            </h2>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-              <input 
-                type="text" 
-                placeholder="Título *" 
-                value={form.title} 
-                onChange={e => setForm({ ...form, title: e.target.value })} 
-                style={{ 
-                  width: '100%', 
-                  padding: '0.8rem', 
-                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
-                  borderRadius: '8px', 
-                  fontSize: '1rem', 
-                  marginBottom: '1rem',
-                  background: darkMode ? '#2d2d44' : 'white',
-                  color: darkMode ? 'white' : '#333'
-                }} 
-              />
-              <select 
-                value={form.category} 
-                onChange={e => setForm({ ...form, category: e.target.value })} 
-                style={{ 
-                  width: '100%', 
-                  padding: '0.8rem', 
-                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
-                  borderRadius: '8px', 
-                  fontSize: '1rem', 
-                  marginBottom: '1rem',
-                  background: darkMode ? '#2d2d44' : 'white',
-                  color: darkMode ? 'white' : '#333'
-                }}
-              >
-                <option value="críticas">Críticas</option>
-                <option value="séries">Séries</option>
-                <option value="notícias">Notícias</option>
-              </select>
-              <select 
-                value={form.type} 
-                onChange={e => setForm({ ...form, type: e.target.value })} 
-                style={{ 
-                  width: '100%', 
-                  padding: '0.8rem', 
-                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
-                  borderRadius: '8px', 
-                  fontSize: '1rem', 
-                  marginBottom: '1rem',
-                  background: darkMode ? '#2d2d44' : 'white',
-                  color: darkMode ? 'white' : '#333'
-                }}
-              >
-                <option value="Filme">Filme</option>
-                <option value="Série">Série</option>
-                <option value="Documentário">Documentário</option>
-                <option value="Notícia">Notícia</option>
-              </select>
-              <input 
-                type="text" 
-                placeholder="URL da Imagem" 
-                value={form.image} 
-                onChange={e => setForm({ ...form, image: e.target.value })} 
-                style={{ 
-                  width: '100%', 
-                  padding: '0.8rem', 
-                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
-                  borderRadius: '8px', 
-                  fontSize: '1rem', 
-                  marginBottom: '1rem',
-                  background: darkMode ? '#2d2d44' : 'white',
-                  color: darkMode ? 'white' : '#333'
-                }} 
-              />
-              <input 
-                type="number" 
-                placeholder="Nota (0-5)" 
-                min="0" 
-                max="5" 
-                step="0.5" 
-                value={form.rating} 
-                onChange={e => setForm({ ...form, rating: e.target.value })} 
-                style={{ 
-                  width: '100%', 
-                  padding: '0.8rem', 
-                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
-                  borderRadius: '8px', 
-                  fontSize: '1rem', 
-                  marginBottom: '1rem',
-                  background: darkMode ? '#2d2d44' : 'white',
-                  color: darkMode ? 'white' : '#333'
-                }} 
-              />
-              <input 
-                type="text" 
-                placeholder="Tempo de leitura (ex: 5 min)" 
-                value={form.readTime} 
-                onChange={e => setForm({ ...form, readTime: e.target.value })} 
-                style={{ 
-                  width: '100%', 
-                  padding: '0.8rem', 
-                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
-                  borderRadius: '8px', 
-                  fontSize: '1rem', 
-                  marginBottom: '1rem',
-                  background: darkMode ? '#2d2d44' : 'white',
-                  color: darkMode ? 'white' : '#333'
-                }} 
-              />
-            </div>
-            
-            <textarea 
-              placeholder="Resumo *" 
-              rows="3" 
-              value={form.excerpt} 
-              onChange={e => setForm({ ...form, excerpt: e.target.value })} 
-              style={{ 
-                width: '100%', 
-                padding: '0.8rem', 
-                border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
-                borderRadius: '8px', 
-                fontSize: '1rem', 
-                marginBottom: '1rem',
-                background: darkMode ? '#2d2d44' : 'white',
-                color: darkMode ? 'white' : '#333',
-                resize: 'vertical'
-              }} 
-            />
-            
-            <textarea 
-              placeholder="Conteúdo completo (separe parágrafos com linha em branco)" 
-              rows="8" 
-              value={form.fullContent} 
-              onChange={e => setForm({ ...form, fullContent: e.target.value })} 
-              style={{ 
-                width: '100%', 
-                padding: '0.8rem', 
-                border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
-                borderRadius: '8px', 
-                fontSize: '1rem', 
-                marginBottom: '1rem',
-                background: darkMode ? '#2d2d44' : 'white',
-                color: darkMode ? 'white' : '#333',
-                resize: 'vertical'
-              }} 
-            />
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <textarea 
-                placeholder="✅ Pontos positivos (um por linha)" 
-                rows="4" 
-                value={form.highlights} 
-                onChange={e => setForm({ ...form, highlights: e.target.value })} 
-                style={{ 
-                  width: '100%', 
-                  padding: '0.8rem', 
-                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
-                  borderRadius: '8px', 
-                  fontSize: '1rem', 
-                  marginBottom: '1rem',
-                  background: darkMode ? '#2d2d44' : 'white',
-                  color: darkMode ? 'white' : '#333',
-                  resize: 'vertical'
-                }} 
-              />
-              <textarea 
-                placeholder="⚠️ Pontos negativos (um por linha)" 
-                rows="4" 
-                value={form.lowlights} 
-                onChange={e => setForm({ ...form, lowlights: e.target.value })} 
-                style={{ 
-                  width: '100%', 
-                  padding: '0.8rem', 
-                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
-                  borderRadius: '8px', 
-                  fontSize: '1rem', 
-                  marginBottom: '1rem',
-                  background: darkMode ? '#2d2d44' : 'white',
-                  color: darkMode ? 'white' : '#333',
-                  resize: 'vertical'
-                }} 
-              />
-            </div>
-            
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-              <button 
-                onClick={handleSave} 
-                disabled={adminLoading} 
-                style={{ 
-                  background: '#D32F2F', 
-                  color: 'white', 
-                  border: 'none', 
-                  padding: '1rem 2rem', 
-                  borderRadius: '10px', 
-                  fontSize: '1rem', 
-                  fontWeight: '700', 
-                  cursor: 'pointer'
-                }}
-              >
-                {adminLoading ? 'Salvando...' : editingPost ? '💾 Atualizar Post' : '💾 Criar Post'}
-              </button>
-              
-              {editingPost && (
-                <button 
-                  onClick={cancelEdit}
-                  style={{ 
-                    background: '#999', 
-                    color: 'white', 
-                    border: 'none', 
-                    padding: '1rem 2rem', 
-                    borderRadius: '10px', 
-                    fontSize: '1rem', 
-                    fontWeight: '700', 
-                    cursor: 'pointer'
-                  }}
-                >
-                  ❌ Cancelar Edição
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* LISTA DE POSTS EXISTENTES */}
-          <div style={{ 
-            background: darkMode ? '#1a1a2e' : 'white', 
-            borderRadius: '15px', 
-            padding: '2rem', 
-            boxShadow: '0 4px 15px rgba(0,0,0,0.1)' 
-          }}>
-            <h2 style={{ 
-              fontSize: '1.5rem', 
-              fontWeight: '800', 
-              color: darkMode ? 'white' : '#1A1A2E', 
-              marginBottom: '1.5rem' 
-            }}>
-              📝 Posts Existentes ({posts.length})
-            </h2>
-            
-            {posts.length === 0 ? (
-              <p style={{ color: darkMode ? '#cccccc' : '#666666', textAlign: 'center', padding: '2rem' }}>
-                Nenhum post criado ainda.
-              </p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {posts.map(post => (
-                  <div key={post.id} style={{
-                    background: darkMode ? '#2d2d44' : '#FFF8DC',
-                    padding: '1.5rem',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '1rem'
-                  }}>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ 
-                        color: darkMode ? 'white' : '#1A1A2E', 
-                        marginBottom: '0.5rem',
-                        fontSize: '1.1rem'
-                      }}>
-                        {post.title}
-                      </h3>
-                      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                        <span style={{ 
-                          background: '#D32F2F', 
-                          color: 'white', 
-                          padding: '0.3rem 0.8rem', 
-                          borderRadius: '15px', 
-                          fontSize: '0.8rem' 
-                        }}>
-                          {post.category}
-                        </span>
-                        <span style={{ 
-                          background: '#4DB6AC', 
-                          color: 'white', 
-                          padding: '0.3rem 0.8rem', 
-                          borderRadius: '15px', 
-                          fontSize: '0.8rem' 
-                        }}>
-                          {post.type}
-                        </span>
-                        <span style={{ color: darkMode ? '#cccccc' : '#666666', fontSize: '0.9rem' }}>
-                          📅 {new Date(post.date).toLocaleDateString('pt-BR')}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <button 
-                        onClick={() => handleEdit(post)}
-                        style={{
-                          background: '#FFA726',
-                          color: 'white',
-                          border: 'none',
-                          padding: '0.5rem 1rem',
-                          borderRadius: '5px',
-                          cursor: 'pointer',
-                          fontSize: '0.9rem'
-                        }}
-                      >
-                        ✏️ Editar
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(post.id)}
-                        style={{
-                          background: '#D32F2F',
-                          color: 'white',
-                          border: 'none',
-                          padding: '0.5rem 1rem',
-                          borderRadius: '5px',
-                          cursor: 'pointer',
-                          fontSize: '0.9rem'
-                        }}
-                      >
-                        🗑️ Excluir
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </main>
-      </div>
     );
   };
 
@@ -1578,108 +1035,6 @@ function App() {
     );
   };
 
-  // Componente SEO Head
-  const SEOHead = () => {
-    const currentPost = selectedPost || (posts.length > 0 ? posts[0] : null);
-    
-    const metaTags = {
-      title: currentPost 
-        ? `${currentPost.title} - Minha Crítica Não Especializada`
-        : 'Minha Crítica Não Especializada - Opiniões Sinceras sobre Cinema e Séries',
-      
-      description: currentPost 
-        ? currentPost.excerpt
-        : 'Opiniões sinceras sobre cinema e séries, sem frescura. Críticas, análises e notícias do mundo do entretenimento.',
-      
-      keywords: currentPost
-        ? `crítica, ${currentPost.type}, ${currentPost.category}, filme, série, análise`
-        : 'crítica, cinema, séries, filmes, análise, entretenimento, opinião',
-      
-      url: window.location.href,
-      image: currentPost?.image || '/images/logo-minha-critica.png'
-    };
-
-    // Esta função seria usada em um app real para atualizar as meta tags
-    // Por enquanto, vamos apenas retornar um div invisível com as informações
-    return (
-      <div style={{ display: 'none' }}>
-        {/* Meta tags que seriam injetadas no head em uma aplicação real */}
-        <title>{metaTags.title}</title>
-        <meta name="description" content={metaTags.description} />
-        <meta name="keywords" content={metaTags.keywords} />
-        <meta property="og:title" content={metaTags.title} />
-        <meta property="og:description" content={metaTags.description} />
-        <meta property="og:image" content={metaTags.image} />
-        <meta property="og:url" content={metaTags.url} />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={metaTags.title} />
-        <meta name="twitter:description" content={metaTags.description} />
-        <meta name="twitter:image" content={metaTags.image} />
-        
-        {/* Schema.org markup for Google */}
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Blog",
-            "name": "Minha Crítica Não Especializada",
-            "description": metaTags.description,
-            "url": metaTags.url,
-            "publisher": {
-              "@type": "Organization",
-              "name": "Minha Crítica Não Especializada",
-              "logo": {
-                "@type": "ImageObject",
-                "url": "/images/logo-minha-critica.png"
-              }
-            }
-          })}
-        </script>
-      </div>
-    );
-  };
-
-  // Loading State
-  if (loading) {
-    return (
-      <div style={{ 
-        minHeight: '100vh', 
-        background: darkMode ? '#0a0a1a' : '#FFF8DC',
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        flexDirection: 'column',
-        fontFamily: "'Poppins', sans-serif"
-      }}>
-        <div style={{ 
-          fontSize: '4rem', 
-          marginBottom: '1rem', 
-          animation: 'spin 1s linear infinite' 
-        }}>
-          🎬
-        </div>
-        <h2 style={{ color: darkMode ? 'white' : '#1A1A2E' }}>
-          {error ? 'Erro ao carregar' : 'Carregando seus posts...'}
-        </h2>
-        {error && (
-          <p style={{ color: '#FFA726', marginTop: '1rem', textAlign: 'center' }}>
-            {error}
-          </p>
-        )}
-        <style>{`
-          @keyframes spin { 
-            from { transform: rotate(0deg); } 
-            to { transform: rotate(360deg); } 
-          }
-        `}</style>
-      </div>
-    );
-  }
-
-  // PAINEL ADMIN
-  if (showAdmin) {
-    return <AdminPanel />;
-  }
-
   // Página de Contato
   const ContactPage = () => (
     <div style={{ 
@@ -1898,6 +1253,698 @@ function App() {
     );
   };
 
+  // Sistema de Admin com Gerenciamento de Posts
+  const AdminPanel = () => {
+    const [token, setToken] = useState(localStorage.getItem('admin_token') || '');
+    const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('admin_token'));
+    const [form, setForm] = useState({ 
+      title: '', 
+      category: 'críticas', 
+      type: 'Filme', 
+      image: '', 
+      excerpt: '', 
+      rating: '', 
+      readTime: '', 
+      fullContent: '', 
+      highlights: '', 
+      lowlights: '' 
+    });
+    const [adminLoading, setAdminLoading] = useState(false);
+    const [editingPost, setEditingPost] = useState(null);
+    const [syncStatus, setSyncStatus] = useState('');
+
+    const handleLogin = async () => {
+      try {
+        setAdminLoading(true);
+        const data = await api.login(adminLogin.username, adminLogin.password);
+        localStorage.setItem('admin_token', data.token);
+        setToken(data.token);
+        setIsLoggedIn(true);
+        setAdminLogin({ username: '', password: '' });
+        setSyncStatus('🟢 Conectado ao MySQL');
+      } catch (e) { 
+        alert('❌ ' + e.message);
+        setSyncStatus('🔴 Erro de conexão');
+      } finally { 
+        setAdminLoading(false); 
+      }
+    };
+
+    const handleLogout = () => { 
+      localStorage.removeItem('admin_token'); 
+      setToken(''); 
+      setIsLoggedIn(false); 
+      setSyncStatus('');
+    };
+
+    const handleSave = async () => {
+      if (!form.title || !form.excerpt) { 
+        alert('Preencha título e resumo!'); 
+        return; 
+      }
+      try {
+        setAdminLoading(true);
+        const postData = {
+          ...form, 
+          rating: form.rating ? parseFloat(form.rating) : null,
+          date: new Date().toISOString().split('T')[0],
+          highlights: form.highlights ? form.highlights.split('\n').filter(h => h.trim()) : [],
+          lowlights: form.lowlights ? form.lowlights.split('\n').filter(l => l.trim()) : []
+        };
+        
+        if (editingPost) {
+          // Atualizar post no MySQL
+          await api.updatePost(editingPost.id, postData, token);
+          setSyncStatus('✅ Post atualizado no MySQL!');
+        } else {
+          // Criar novo post no MySQL
+          await api.createPost(postData, token);
+          setSyncStatus('✅ Post criado no MySQL!');
+        }
+        
+        // Recarregar posts
+        await loadPosts();
+        
+        alert(`✅ Post ${editingPost ? 'atualizado' : 'criado'} com sucesso!`);
+        setForm({ 
+          title: '', category: 'críticas', type: 'Filme', image: '', excerpt: '', 
+          rating: '', readTime: '', fullContent: '', highlights: '', lowlights: '' 
+        });
+        setEditingPost(null);
+      } catch (e) { 
+        alert('❌ ' + e.message);
+        setSyncStatus('🔴 Erro ao salvar no MySQL');
+      } finally { 
+        setAdminLoading(false); 
+      }
+    };
+
+    const handleEdit = (post) => {
+      setEditingPost(post);
+      setForm({
+        title: post.title,
+        category: post.category,
+        type: post.type,
+        image: post.image || '',
+        excerpt: post.excerpt,
+        rating: post.rating || '',
+        readTime: post.readTime || '',
+        fullContent: post.fullContent || '',
+        highlights: post.highlights ? post.highlights.join('\n') : '',
+        lowlights: post.lowlights ? post.lowlights.join('\n') : ''
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleDelete = async (postId) => {
+      if (window.confirm('Tem certeza que deseja excluir este post?')) {
+        try {
+          await api.deletePost(postId, token);
+          setSyncStatus('✅ Post excluído do MySQL!');
+          await loadPosts(); // Recarregar lista
+          alert('✅ Post excluído com sucesso!');
+        } catch (error) {
+          alert('❌ Erro ao excluir post: ' + error.message);
+          setSyncStatus('🔴 Erro ao excluir do MySQL');
+        }
+      }
+    };
+
+    const cancelEdit = () => {
+      setEditingPost(null);
+      setForm({ 
+        title: '', category: 'críticas', type: 'Filme', image: '', excerpt: '', 
+        rating: '', readTime: '', fullContent: '', highlights: '', lowlights: '' 
+      });
+    };
+
+    // TELA DE LOGIN DO ADMIN
+    if (!isLoggedIn) {
+      return (
+        <div style={{ 
+          minHeight: '100vh', 
+          background: darkMode ? '#0a0a1a' : '#FFF8DC', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          fontFamily: "'Poppins', sans-serif" 
+        }}>
+          <div style={{ 
+            background: darkMode ? '#1a1a2e' : 'white', 
+            padding: '2.5rem', 
+            borderRadius: '20px', 
+            boxShadow: '0 10px 40px rgba(0,0,0,0.15)', 
+            maxWidth: '400px', 
+            width: '100%' 
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div style={{ fontSize: '3rem' }}>🔐</div>
+              <h1 style={{ 
+                fontSize: '1.8rem', 
+                fontWeight: '900', 
+                color: darkMode ? 'white' : '#1A1A2E', 
+                marginTop: '1rem' 
+              }}>
+                Painel Admin
+              </h1>
+              <p style={{ color: darkMode ? '#cccccc' : '#666666' }}>Minha Crítica Não Especializada</p>
+              <p style={{ 
+                fontSize: '0.9rem', 
+                color: '#4DB6AC', 
+                marginTop: '0.5rem',
+                background: 'rgba(77,182,172,0.1)',
+                padding: '0.5rem',
+                borderRadius: '5px'
+              }}>
+                🗄️ Conectado ao MySQL
+              </p>
+            </div>
+            
+            <input 
+              type="text" 
+              placeholder="Usuário" 
+              value={adminLogin.username}
+              onChange={e => setAdminLogin({...adminLogin, username: e.target.value})} 
+              style={{ 
+                width: '100%', 
+                padding: '0.8rem', 
+                border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                borderRadius: '8px', 
+                fontSize: '1rem', 
+                marginBottom: '1rem',
+                background: darkMode ? '#2d2d44' : 'white',
+                color: darkMode ? 'white' : '#333'
+              }} 
+            />
+            <input 
+              type="password" 
+              placeholder="Senha" 
+              value={adminLogin.password}
+              onChange={e => setAdminLogin({...adminLogin, password: e.target.value})}
+              onKeyPress={e => e.key === 'Enter' && handleLogin()} 
+              style={{ 
+                width: '100%', 
+                padding: '0.8rem', 
+                border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                borderRadius: '8px', 
+                fontSize: '1rem', 
+                marginBottom: '1rem',
+                background: darkMode ? '#2d2d44' : 'white',
+                color: darkMode ? 'white' : '#333'
+              }} 
+            />
+            
+            <button 
+              onClick={handleLogin} 
+              disabled={adminLoading} 
+              style={{ 
+                width: '100%', 
+                background: '#D32F2F', 
+                color: 'white', 
+                border: 'none', 
+                padding: '1rem', 
+                borderRadius: '10px', 
+                fontSize: '1.1rem', 
+                fontWeight: '700', 
+                cursor: 'pointer', 
+                marginBottom: '1rem' 
+              }}
+            >
+              {adminLoading ? '⏳ Entrando...' : '🔐 Entrar no MySQL'}
+            </button>
+            
+            <button 
+              onClick={() => setShowAdmin(false)} 
+              style={{ 
+                width: '100%', 
+                background: '#999', 
+                color: 'white', 
+                border: 'none', 
+                padding: '0.8rem', 
+                borderRadius: '10px', 
+                fontSize: '1rem', 
+                cursor: 'pointer' 
+              }}
+            >
+              ← Voltar ao Blog
+            </button>
+            
+            <p style={{ marginTop: '1.5rem', fontSize: '0.85rem', color: '#999', textAlign: 'center' }}>
+              Usuário: admin | Senha: admin123
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // PAINEL ADMIN LOGADO
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        background: darkMode ? '#0a0a1a' : '#FFF8DC', 
+        fontFamily: "'Poppins', sans-serif" 
+      }}>
+        <header style={{ 
+          background: 'linear-gradient(135deg, #D32F2F 0%, #1A1A2E 100%)', 
+          padding: '1rem 2rem', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem'
+        }}>
+          <div>
+            <h1 style={{ color: 'white', fontSize: '1.5rem', fontWeight: '900' }}>
+              🎬 Painel Admin - Minha Crítica
+            </h1>
+            <p style={{ color: '#4DB6AC', fontSize: '0.9rem', marginTop: '0.2rem' }}>
+              {posts.length} posts • {syncStatus || '🟢 Conectado ao MySQL'}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button onClick={() => setShowAdmin(false)} style={{ 
+              background: '#4DB6AC', 
+              color: 'white', 
+              border: 'none', 
+              padding: '0.6rem 1.2rem', 
+              borderRadius: '8px', 
+              cursor: 'pointer', 
+              fontWeight: '700' 
+            }}>
+              ← Voltar ao Blog
+            </button>
+            <button onClick={handleLogout} style={{ 
+              background: '#FFA726', 
+              color: 'white', 
+              border: 'none', 
+              padding: '0.6rem 1.2rem', 
+              borderRadius: '8px', 
+              cursor: 'pointer', 
+              fontWeight: '700'
+            }}>
+              Sair
+            </button>
+          </div>
+        </header>
+        
+        <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+          {/* FORMULÁRIO DE CRIAÇÃO/EDIÇÃO */}
+          <div style={{ 
+            background: darkMode ? '#1a1a2e' : 'white', 
+            borderRadius: '15px', 
+            padding: '2rem', 
+            marginBottom: '2rem', 
+            boxShadow: '0 4px 15px rgba(0,0,0,0.1)' 
+          }}>
+            <h2 style={{ 
+              fontSize: '1.5rem', 
+              fontWeight: '800', 
+              color: darkMode ? 'white' : '#1A1A2E', 
+              marginBottom: '1.5rem' 
+            }}>
+              {editingPost ? '✏️ Editar Post' : '➕ Criar Novo Post'}
+            </h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+              <input 
+                type="text" 
+                placeholder="Título *" 
+                value={form.title} 
+                onChange={e => setForm({ ...form, title: e.target.value })} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.8rem', 
+                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                  borderRadius: '8px', 
+                  fontSize: '1rem', 
+                  marginBottom: '1rem',
+                  background: darkMode ? '#2d2d44' : 'white',
+                  color: darkMode ? 'white' : '#333'
+                }} 
+              />
+              <select 
+                value={form.category} 
+                onChange={e => setForm({ ...form, category: e.target.value })} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.8rem', 
+                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                  borderRadius: '8px', 
+                  fontSize: '1rem', 
+                  marginBottom: '1rem',
+                  background: darkMode ? '#2d2d44' : 'white',
+                  color: darkMode ? 'white' : '#333'
+                }}
+              >
+                <option value="críticas">Críticas</option>
+                <option value="séries">Séries</option>
+                <option value="notícias">Notícias</option>
+              </select>
+              <select 
+                value={form.type} 
+                onChange={e => setForm({ ...form, type: e.target.value })} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.8rem', 
+                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                  borderRadius: '8px', 
+                  fontSize: '1rem', 
+                  marginBottom: '1rem',
+                  background: darkMode ? '#2d2d44' : 'white',
+                  color: darkMode ? 'white' : '#333'
+                }}
+              >
+                <option value="Filme">Filme</option>
+                <option value="Série">Série</option>
+                <option value="Documentário">Documentário</option>
+                <option value="Notícia">Notícia</option>
+              </select>
+              <input 
+                type="text" 
+                placeholder="URL da Imagem" 
+                value={form.image} 
+                onChange={e => setForm({ ...form, image: e.target.value })} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.8rem', 
+                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                  borderRadius: '8px', 
+                  fontSize: '1rem', 
+                  marginBottom: '1rem',
+                  background: darkMode ? '#2d2d44' : 'white',
+                  color: darkMode ? 'white' : '#333'
+                }} 
+              />
+              <input 
+                type="number" 
+                placeholder="Nota (0-5)" 
+                min="0" 
+                max="5" 
+                step="0.5" 
+                value={form.rating} 
+                onChange={e => setForm({ ...form, rating: e.target.value })} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.8rem', 
+                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                  borderRadius: '8px', 
+                  fontSize: '1rem', 
+                  marginBottom: '1rem',
+                  background: darkMode ? '#2d2d44' : 'white',
+                  color: darkMode ? 'white' : '#333'
+                }} 
+              />
+              <input 
+                type="text" 
+                placeholder="Tempo de leitura (ex: 5 min)" 
+                value={form.readTime} 
+                onChange={e => setForm({ ...form, readTime: e.target.value })} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.8rem', 
+                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                  borderRadius: '8px', 
+                  fontSize: '1rem', 
+                  marginBottom: '1rem',
+                  background: darkMode ? '#2d2d44' : 'white',
+                  color: darkMode ? 'white' : '#333'
+                }} 
+              />
+            </div>
+            
+            <textarea 
+              placeholder="Resumo *" 
+              rows="3" 
+              value={form.excerpt} 
+              onChange={e => setForm({ ...form, excerpt: e.target.value })} 
+              style={{ 
+                width: '100%', 
+                padding: '0.8rem', 
+                border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                borderRadius: '8px', 
+                fontSize: '1rem', 
+                marginBottom: '1rem',
+                background: darkMode ? '#2d2d44' : 'white',
+                color: darkMode ? 'white' : '#333',
+                resize: 'vertical'
+              }} 
+            />
+            
+            <textarea 
+              placeholder="Conteúdo completo (separe parágrafos com linha em branco)" 
+              rows="8" 
+              value={form.fullContent} 
+              onChange={e => setForm({ ...form, fullContent: e.target.value })} 
+              style={{ 
+                width: '100%', 
+                padding: '0.8rem', 
+                border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                borderRadius: '8px', 
+                fontSize: '1rem', 
+                marginBottom: '1rem',
+                background: darkMode ? '#2d2d44' : 'white',
+                color: darkMode ? 'white' : '#333',
+                resize: 'vertical'
+              }} 
+            />
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <textarea 
+                placeholder="✅ Pontos positivos (um por linha)" 
+                rows="4" 
+                value={form.highlights} 
+                onChange={e => setForm({ ...form, highlights: e.target.value })} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.8rem', 
+                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                  borderRadius: '8px', 
+                  fontSize: '1rem', 
+                  marginBottom: '1rem',
+                  background: darkMode ? '#2d2d44' : 'white',
+                  color: darkMode ? 'white' : '#333',
+                  resize: 'vertical'
+                }} 
+              />
+              <textarea 
+                placeholder="⚠️ Pontos negativos (um por linha)" 
+                rows="4" 
+                value={form.lowlights} 
+                onChange={e => setForm({ ...form, lowlights: e.target.value })} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.8rem', 
+                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                  borderRadius: '8px', 
+                  fontSize: '1rem', 
+                  marginBottom: '1rem',
+                  background: darkMode ? '#2d2d44' : 'white',
+                  color: darkMode ? 'white' : '#333',
+                  resize: 'vertical'
+                }} 
+              />
+            </div>
+            
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+              <button 
+                onClick={handleSave} 
+                disabled={adminLoading} 
+                style={{ 
+                  background: '#D32F2F', 
+                  color: 'white', 
+                  border: 'none', 
+                  padding: '1rem 2rem', 
+                  borderRadius: '10px', 
+                  fontSize: '1rem', 
+                  fontWeight: '700', 
+                  cursor: 'pointer'
+                }}
+              >
+                {adminLoading ? 'Salvando...' : editingPost ? '💾 Atualizar Post' : '💾 Criar Post'}
+              </button>
+              
+              {editingPost && (
+                <button 
+                  onClick={cancelEdit}
+                  style={{ 
+                    background: '#999', 
+                    color: 'white', 
+                    border: 'none', 
+                    padding: '1rem 2rem', 
+                    borderRadius: '10px', 
+                    fontSize: '1rem', 
+                    fontWeight: '700', 
+                    cursor: 'pointer'
+                  }}
+                >
+                  ❌ Cancelar Edição
+                </button>
+              )}
+            </div>
+
+            {syncStatus && (
+              <div style={{ 
+                marginTop: '1rem', 
+                padding: '1rem', 
+                background: syncStatus.includes('✅') ? 'rgba(77,182,172,0.1)' : 'rgba(255,167,38,0.1)',
+                borderRadius: '8px',
+                border: `1px solid ${syncStatus.includes('✅') ? '#4DB6AC' : '#FFA726'}`,
+                color: syncStatus.includes('✅') ? '#4DB6AC' : '#FFA726',
+                fontSize: '0.9rem'
+              }}>
+                {syncStatus}
+              </div>
+            )}
+          </div>
+
+          {/* LISTA DE POSTS EXISTENTES */}
+          <div style={{ 
+            background: darkMode ? '#1a1a2e' : 'white', 
+            borderRadius: '15px', 
+            padding: '2rem', 
+            boxShadow: '0 4px 15px rgba(0,0,0,0.1)' 
+          }}>
+            <h2 style={{ 
+              fontSize: '1.5rem', 
+              fontWeight: '800', 
+              color: darkMode ? 'white' : '#1A1A2E', 
+              marginBottom: '1.5rem' 
+            }}>
+              📝 Posts no Banco de Dados ({posts.length})
+            </h2>
+            
+            {posts.length === 0 ? (
+              <p style={{ color: darkMode ? '#cccccc' : '#666666', textAlign: 'center', padding: '2rem' }}>
+                Nenhum post criado ainda.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {posts.map(post => (
+                  <div key={post.id} style={{
+                    background: darkMode ? '#2d2d44' : '#FFF8DC',
+                    padding: '1.5rem',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '1rem'
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ 
+                        color: darkMode ? 'white' : '#1A1A2E', 
+                        marginBottom: '0.5rem',
+                        fontSize: '1.1rem'
+                      }}>
+                        {post.title}
+                      </h3>
+                      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                        <span style={{ 
+                          background: '#D32F2F', 
+                          color: 'white', 
+                          padding: '0.3rem 0.8rem', 
+                          borderRadius: '15px', 
+                          fontSize: '0.8rem' 
+                        }}>
+                          {post.category}
+                        </span>
+                        <span style={{ 
+                          background: '#4DB6AC', 
+                          color: 'white', 
+                          padding: '0.3rem 0.8rem', 
+                          borderRadius: '15px', 
+                          fontSize: '0.8rem' 
+                        }}>
+                          {post.type}
+                        </span>
+                        <span style={{ color: darkMode ? '#cccccc' : '#666666', fontSize: '0.9rem' }}>
+                          📅 {new Date(post.date).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <button 
+                        onClick={() => handleEdit(post)}
+                        style={{
+                          background: '#FFA726',
+                          color: 'white',
+                          border: 'none',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '5px',
+                          cursor: 'pointer',
+                          fontSize: '0.9rem'
+                        }}
+                      >
+                        ✏️ Editar
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(post.id)}
+                        style={{
+                          background: '#D32F2F',
+                          color: 'white',
+                          border: 'none',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '5px',
+                          cursor: 'pointer',
+                          fontSize: '0.9rem'
+                        }}
+                      >
+                        🗑️ Excluir
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    );
+  };
+
+  // Loading State
+  if (loading) {
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        background: darkMode ? '#0a0a1a' : '#FFF8DC',
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        flexDirection: 'column',
+        fontFamily: "'Poppins', sans-serif"
+      }}>
+        <div style={{ 
+          fontSize: '4rem', 
+          marginBottom: '1rem', 
+          animation: 'spin 1s linear infinite' 
+        }}>
+          🎬
+        </div>
+        <h2 style={{ color: darkMode ? 'white' : '#1A1A2E' }}>
+          {error ? 'Erro ao carregar' : 'Carregando posts do MySQL...'}
+        </h2>
+        {error && (
+          <p style={{ color: '#FFA726', marginTop: '1rem', textAlign: 'center' }}>
+            {error}
+          </p>
+        )}
+        <style>{`
+          @keyframes spin { 
+            from { transform: rotate(0deg); } 
+            to { transform: rotate(360deg); } 
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // PAINEL ADMIN
+  if (showAdmin) {
+    return <AdminPanel />;
+  }
+
   return (
     <div style={{ 
       minHeight: '100vh', 
@@ -1971,7 +2018,7 @@ function App() {
                 fontSize: '0.9rem', 
                 fontWeight: '700'
               }}>
-                {error ? '📦 Modo Offline' : '🗄️ Conectado'} • {posts.length} posts
+                {error ? '📦 Modo Offline' : '🗄️ MySQL'} • {posts.length} posts
               </span>
               <button 
                 onClick={() => setShowAdmin(true)}
@@ -2023,7 +2070,7 @@ function App() {
           {/* Página de Contato */}
           {currentPage === 'contato' && <ContactPage />}
 
-          {/* Grid de Posts (não mostra na página de contato) */}
+          {/* Grid de Posts */}
           {currentPage !== 'contato' && (posts.length === 0 ? (
             <div style={{ 
               background: darkMode ? '#1a1a2e' : 'white', 
@@ -2044,8 +2091,8 @@ function App() {
               </h3>
               <p style={{ fontSize: '1rem', marginBottom: '2rem' }}>
                 {error 
-                  ? 'Não foi possível carregar os posts do servidor.'
-                  : 'Você ainda não tem posts cadastrados.'
+                  ? 'Não foi possível carregar os posts do MySQL.'
+                  : 'Você ainda não tem posts cadastrados no banco de dados.'
                 }
               </p>
               <button 
