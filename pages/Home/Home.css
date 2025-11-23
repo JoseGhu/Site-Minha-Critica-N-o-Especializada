@@ -1,0 +1,81 @@
+.home-page {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .page-title {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--dark);
+    text-transform: capitalize;
+  }
+  
+  .status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .status-badge.success {
+    background: var(--accent);
+    color: white;
+  }
+  
+  .status-badge.error {
+    background: var(--secondary);
+    color: white;
+  }
+  
+  .empty-state {
+    background: white;
+    padding: 3rem;
+    border-radius: 20px;
+    text-align: center;
+    color: #999;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+  
+  .empty-title {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .empty-description {
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .reload-button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  
+  .reload-button:hover {
+    background: #b71c1c;
+  }
+  
+  .posts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+  }

@@ -1,0 +1,125 @@
+.post-detail-container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  
+  .back-button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    transition: background 0.3s ease;
+  }
+  
+  .back-button:hover {
+    background: #3da89a;
+  }
+  
+  .post-detail {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  }
+  
+  .post-detail-image-container {
+    position: relative;
+    padding-top: 50%;
+  }
+  
+  .post-detail-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .post-detail-content {
+    padding: 3rem;
+  }
+  
+  .post-detail-badges {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .post-detail-type {
+    background: var(--primary);
+    color: white;
+    padding: 0.5rem 1.2rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+  
+  .post-detail-rating {
+    background: var(--gold);
+    color: var(--dark);
+    padding: 0.5rem 1.2rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  
+  .post-detail-title {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--dark);
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+  
+  .post-detail-meta {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+    color: #666;
+  }
+  
+  .post-detail-date,
+  .post-detail-read-time {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .post-detail-body {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #333;
+  }
+  
+  .post-paragraph {
+    margin-bottom: 1.5rem;
+  }
+  
+  .post-section-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .post-list {
+    margin-bottom: 2rem;
+    padding-left: 1.5rem;
+  }
+  
+  .post-list-item {
+    margin-bottom: 0.8rem;
+    color: #333;
+  }

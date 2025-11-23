@@ -1,0 +1,30 @@
+.app {
+    min-height: 100vh;
+    background: var(--cream);
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  .main-content {
+    padding: 3rem 2rem;
+  }
+  
+  .loading-container {
+    min-height: 100vh;
+    background: var(--cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  .loading-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: spin 1s linear infinite;
+  }
+  
+  .loading-text {
+    color: var(--dark);
+    font-size: 1.5rem;
+  }
