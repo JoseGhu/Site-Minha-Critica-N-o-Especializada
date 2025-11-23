@@ -1,19 +1,30 @@
 import React from 'react';
-import { Star, Calendar, Clock } from 'lucide-react';
-import { colors } from '../../styles/colors';
+import { Star, Calendar, Clock, Eye } from 'lucide-react';
 import './PostCard.css';
 
-const PostCard = ({ post, onClick }) => {
+const PostCard = ({ post, onClick, darkMode }) => {
+  const handleClick = () => {
+    // Rastrear visualização
+    const views = JSON.parse(localStorage.getItem('post-views') || '{}');
+    views[post.id] = (views[post.id] || 0) + 1;
+    localStorage.setItem('post-views', JSON.stringify(views));
+    
+    onClick();
+  };
+
+  const views = JSON.parse(localStorage.getItem('post-views') || '{}')[post.id] || 0;
+
   return (
     <article 
-      onClick={onClick} 
-      className="post-card"
+      onClick={handleClick} 
+      className={`post-card ${darkMode ? 'dark' : ''}`}
     >
       <div className="post-image-container">
         <img 
           src={post.image || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800'} 
           alt={post.title} 
           className="post-image"
+          loading="lazy"
         />
         <div className="post-type-badge">{post.type}</div>
         {post.rating && (
@@ -33,12 +44,22 @@ const PostCard = ({ post, onClick }) => {
             <Calendar size={14} />
             {new Date(post.date).toLocaleDateString('pt-BR')}
           </span>
-          {post.readTime && (
-            <span className="post-read-time">
-              <Clock size={14} />
-              {post.readTime}
-            </span>
-          )}
+          
+          <div className="post-stats">
+            {post.readTime && (
+              <span className="post-read-time">
+                <Clock size={14} />
+                {post.readTime}
+              </span>
+            )}
+            
+            {views > 0 && (
+              <span className="post-views">
+                <Eye size={14} />
+                {views}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </article>

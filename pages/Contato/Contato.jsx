@@ -1,5 +1,5 @@
 import React from 'react';
-import { colors } from '../../styles/colors';
+import { colors } from '../../src/styles/colors';
 import './Contato.css';
 
 const Contato = () => {

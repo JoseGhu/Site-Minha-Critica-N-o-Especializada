@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { colors } from '../../styles/colors';
 import './Banner.css';
 
 const bannerSlides = [
@@ -16,10 +15,15 @@ const bannerSlides = [
     title: "Séries Imperdíveis da Temporada", 
     subtitle: "Descubra suas próximas maratonas" 
   },
-
+  { 
+    id: 3, 
+    image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1200&q=80", 
+    title: "Notícias Quentes do Mundo do Entretenimento", 
+    subtitle: "Fique por dentro das novidades" 
+  }
 ];
 
-const Banner = () => {
+const Banner = ({ darkMode }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % bannerSlides.length);
@@ -31,7 +35,7 @@ const Banner = () => {
   }, []);
 
   return (
-    <div className="banner-container">
+    <div className={`banner-container ${darkMode ? 'dark' : ''}`}>
       {bannerSlides.map((slide, index) => (
         <div 
           key={slide.id}
@@ -42,7 +46,7 @@ const Banner = () => {
         >
           <div className="banner-content">
             <h2>{slide.title}</h2>
-            <p style={{ color: colors.secondary }}>{slide.subtitle}</p>
+            <p>{slide.subtitle}</p>
           </div>
         </div>
       ))}

@@ -1,1298 +1,2210 @@
 import React, { useState, useEffect } from 'react';
-import { Film, Tv, Newspaper, Mail, Home, Star, Calendar, Clock, ChevronLeft, ChevronRight, Plus, Edit, Trash2, Save, X, Lock, LogOut } from 'lucide-react';
 
-// ==========================================
-// CONFIGURAÇÃO DA API
-// ==========================================
-const API_URL = 'http://localhost:3001/api';
+// Configuração da API - Adaptada para produção
+const API_URL = process.env.NODE_ENV === 'development' 
+  ? 'http://localhost:3001/api' 
+  : 'https://seu-backend.railway.app/api';
 
+// Funções da API com fallback robusto
 const api = {
   async getPosts() {
-    const res = await fetch(`${API_URL}/posts`);
-    if (!res.ok) throw new Error('Erro ao buscar posts');
-    return res.json();
-  },
-  async login(username, password) {
-    const res = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    if (!res.ok) throw new Error('Usuário ou senha inválidos');
-    return res.json();
-  },
-  async createPost(token, data) {
-    const res = await fetch(`${API_URL}/posts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(data)
-    });
-    if (!res.ok) throw new Error('Erro ao criar post');
-    return res.json();
-  },
-  async updatePost(token, id, data) {
-    const res = await fetch(`${API_URL}/posts/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(data)
-    });
-    if (!res.ok) throw new Error('Erro ao atualizar post');
-    return res.json();
-  },
-  async deletePost(token, id) {
-    const res = await fetch(`${API_URL}/posts/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error('Erro ao deletar post');
-    return res.json();
-  }
-};
-
-// Paleta de cores
-const colors = {
-  primary: '#D32F2F',
-  secondary: '#FFA726',
-  accent: '#4DB6AC',
-  dark: '#1A1A2E',
-  cream: '#FFF8DC',
-  gold: '#FFD700',
-};
-
-// ==========================================
-// COMPONENTE BANNER
-// ==========================================
-const Banner = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  const bannerSlides = [
-    { id: 1, image: "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=1200&q=80", title: "As Melhores Críticas de Cinema", subtitle: "Análises sinceras sem complicação" },
-    { id: 2, image: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=1200&q=80", title: "Séries Imperdíveis da Temporada", subtitle: "Descubra suas próximas maratonas" },
-    { id: 3, image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1200&q=80", title: "Notícias Quentes do Mundo do Entretenimento", subtitle: "Fique por dentro das novidades" }
-  ];
-
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % bannerSlides.length);
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + bannerSlides.length) % bannerSlides.length);
-
-  useEffect(() => {
-    const interval = setInterval(nextSlide, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div style={{ position: 'relative', width: '100%', height: '400px', borderRadius: '15px', overflow: 'hidden', marginBottom: '3rem', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
-      {bannerSlides.map((slide, index) => (
-        <div key={slide.id} style={{
-          position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-          opacity: index === currentSlide ? 1 : 0, transition: 'opacity 0.8s ease-in-out',
-          background: `linear-gradient(135deg, rgba(26,26,46,0.7) 0%, rgba(211,47,47,0.5) 100%), url(${slide.image})`,
-          backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', padding: '0 4rem'
-        }}>
-          <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
-            <h2 style={{ fontSize: '3rem', fontWeight: '900', color: 'white', marginBottom: '1rem', textShadow: '2px 2px 8px rgba(0,0,0,0.7)', lineHeight: '1.1' }}>{slide.title}</h2>
-            <p style={{ fontSize: '1.5rem', color: colors.secondary, fontWeight: '600', textShadow: '1px 1px 4px rgba(0,0,0,0.5)' }}>{slide.subtitle}</p>
-          </div>
-        </div>
-      ))}
-      <button onClick={prevSlide} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}><ChevronLeft size={24} /></button>
-      <button onClick={nextSlide} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}><ChevronRight size={24} /></button>
-      <div style={{ position: 'absolute', bottom: '1.5rem', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '0.5rem' }}>
-        {bannerSlides.map((_, index) => (
-          <button key={index} onClick={() => setCurrentSlide(index)} style={{ width: '12px', height: '12px', borderRadius: '50%', border: 'none', background: index === currentSlide ? colors.secondary : 'rgba(255,255,255,0.5)', cursor: 'pointer' }} />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// ==========================================
-// COMPONENTE HEADER
-// ==========================================
-const Header = ({ currentPage, setCurrentPage, onLogoDoubleClick }) => (
-  <header style={{ 
-    background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.dark} 100%)`, 
-    padding: '1.5rem 0', 
-    boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-    position: 'sticky',
-    top: 0,
-    zIndex: 100
-  }}>
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-        {/* LOGO - CLIQUE DUPLO PARA ADMIN */}
-        <div 
-          style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} 
-          onClick={() => setCurrentPage('home')}
-          onDoubleClick={onLogoDoubleClick}
-          title="Clique duplo para acessar o painel admin"
-        >
-          <img 
-            src="/images/logo-minha-critica.png" 
-            alt="Minha Crítica Não Especializada" 
-            style={{ 
-              height: '150px', 
-              width: 'auto', 
-              marginTop: '-20px', 
-              filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.45))', 
-              transition: 'transform 0.3s ease' 
-            }}
-            onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-          />
-        </div>
-        
-        {/* MENU */}
-        <nav style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          {[
-            { name: 'Início', icon: Home, page: 'home' },
-            { name: 'Críticas', icon: Film, page: 'críticas' },
-            { name: 'Séries', icon: Tv, page: 'séries' },
-            { name: 'Notícias', icon: Newspaper, page: 'notícias' },
-            { name: 'Contato', icon: Mail, page: 'contato' }
-          ].map(item => (
-            <button key={item.page} onClick={() => setCurrentPage(item.page)} style={{
-              background: currentPage === item.page ? colors.secondary : 'transparent',
-              color: colors.cream, 
-              border: `2px solid ${currentPage === item.page ? colors.secondary : 'transparent'}`,
-              padding: '0.6rem 1.2rem', 
-              borderRadius: '25px', 
-              cursor: 'pointer', 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.5rem',
-              fontSize: '0.9rem', 
-              fontWeight: '700',
-              transition: 'all 0.3s ease',
-              textTransform: 'uppercase'
-            }}>
-              <item.icon size={18} /> {item.name}
-            </button>
-          ))}
-        </nav>
-      </div>
-    </div>
-  </header>
-);
-
-// ==========================================
-// COMPONENTE POST CARD
-// ==========================================
-const PostCard = ({ post, onClick }) => (
-  <article onClick={onClick} style={{ 
-    background: 'white', 
-    borderRadius: '15px', 
-    overflow: 'hidden', 
-    boxShadow: '0 8px 25px rgba(0,0,0,0.12)', 
-    cursor: 'pointer', 
-    transition: 'all 0.3s ease',
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column'
-  }}
-    onMouseEnter={(e) => { 
-      e.currentTarget.style.transform = 'translateY(-8px)'; 
-      e.currentTarget.style.boxShadow = '0 15px 40px rgba(211, 47, 47, 0.25)'; 
-    }}
-    onMouseLeave={(e) => { 
-      e.currentTarget.style.transform = 'translateY(0)'; 
-      e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.12)'; 
-    }}>
-    
-    <div style={{ position: 'relative', paddingTop: '60%', overflow: 'hidden' }}>
-      <img src={post.image || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800'} alt={post.title} style={{ 
-        position: 'absolute', 
-        top: 0, 
-        left: 0, 
-        width: '100%', 
-        height: '100%', 
-        objectFit: 'cover' 
-      }} />
-      <div style={{ 
-        position: 'absolute', 
-        top: '1rem', 
-        left: '1rem', 
-        background: colors.primary, 
-        color: 'white', 
-        padding: '0.4rem 1rem', 
-        borderRadius: '20px', 
-        fontSize: '0.8rem', 
-        fontWeight: '700', 
-        textTransform: 'uppercase' 
-      }}>
-        {post.type}
-      </div>
-      {post.rating && (
-        <div style={{ 
-          position: 'absolute', 
-          top: '1rem', 
-          right: '1rem', 
-          background: colors.gold, 
-          color: colors.dark, 
-          padding: '0.4rem 0.8rem', 
-          borderRadius: '20px', 
-          fontSize: '0.85rem', 
-          fontWeight: '800', 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '0.3rem' 
-        }}>
-          <Star size={14} fill="currentColor" />
-          {post.rating}
-        </div>
-      )}
-    </div>
-    
-    <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <h3 style={{ fontSize: '1.3rem', fontWeight: '800', color: colors.dark, marginBottom: '0.8rem', lineHeight: '1.3' }}>
-        {post.title}
-      </h3>
-      <p style={{ color: '#666', lineHeight: '1.6', marginBottom: '1rem', flex: 1 }}>
-        {post.excerpt}
-      </p>
-      
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        paddingTop: '1rem', 
-        borderTop: `1px solid ${colors.cream}`, 
-        fontSize: '0.85rem', 
-        color: '#999' 
-      }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Calendar size={14} />
-          {new Date(post.date).toLocaleDateString('pt-BR')}
-        </span>
-        {post.readTime && (
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Clock size={14} />
-            {post.readTime}
-          </span>
-        )}
-      </div>
-    </div>
-  </article>
-);
-
-// ==========================================
-// COMPONENTE POST DETAIL (LEITURA COMPLETA)
-// ==========================================
-const PostDetail = ({ post, onBack }) => (
-  <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-    <button onClick={onBack} style={{ 
-      background: colors.accent, 
-      color: 'white', 
-      border: 'none', 
-      padding: '0.8rem 1.5rem', 
-      borderRadius: '25px', 
-      cursor: 'pointer', 
-      fontSize: '1rem', 
-      fontWeight: '700', 
-      marginBottom: '2rem',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem'
-    }}>
-      <ChevronLeft size={20} />
-      Voltar para a lista
-    </button>
-    
-    <article style={{ 
-      background: 'white', 
-      borderRadius: '20px', 
-      overflow: 'hidden', 
-      boxShadow: '0 10px 40px rgba(0,0,0,0.15)' 
-    }}>
-      <div style={{ position: 'relative', paddingTop: '50%' }}>
-        <img src={post.image} alt={post.title} style={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          width: '100%', 
-          height: '100%', 
-          objectFit: 'cover' 
-        }} />
-      </div>
-      
-      <div style={{ padding: '3rem' }}>
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-          <span style={{ 
-            background: colors.primary, 
-            color: 'white', 
-            padding: '0.5rem 1.2rem', 
-            borderRadius: '20px', 
-            fontSize: '0.9rem', 
-            fontWeight: '700' 
-          }}>
-            {post.type}
-          </span>
-          {post.rating && (
-            <span style={{ 
-              background: colors.gold, 
-              color: colors.dark, 
-              padding: '0.5rem 1.2rem', 
-              borderRadius: '20px', 
-              fontSize: '0.9rem', 
-              fontWeight: '800', 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.4rem' 
-            }}>
-              <Star size={16} fill="currentColor" />
-              {post.rating} / 5
-            </span>
-          )}
-        </div>
-        
-        <h1 style={{ 
-          fontSize: '2.5rem', 
-          fontWeight: '900', 
-          color: colors.dark, 
-          marginBottom: '1rem', 
-          lineHeight: '1.2' 
-        }}>
-          {post.title}
-        </h1>
-        
-        <div style={{ 
-          display: 'flex', 
-          gap: '2rem', 
-          marginBottom: '2rem', 
-          fontSize: '0.95rem', 
-          color: '#666' 
-        }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Calendar size={16} />
-            {new Date(post.date).toLocaleDateString('pt-BR')}
-          </span>
-          {post.readTime && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Clock size={16} />
-              {post.readTime}
-            </span>
-          )}
-        </div>
-        
-        <div style={{ fontSize: '1.1rem', lineHeight: '1.8', color: '#333' }}>
-          {post.fullContent ? (
-            <>
-              {post.fullContent.split('\n\n').map((paragraph, idx) => (
-                <p key={idx} style={{ marginBottom: '1.5rem' }}>{paragraph}</p>
-              ))}
-              
-              {post.highlights && post.highlights.length > 0 && (
-                <>
-                  <h2 style={{ 
-                    fontSize: '1.8rem', 
-                    fontWeight: '800', 
-                    color: colors.primary, 
-                    marginTop: '2.5rem', 
-                    marginBottom: '1rem' 
-                  }}>
-                    ✅ O que funciona
-                  </h2>
-                  <ul style={{ marginBottom: '2rem', paddingLeft: '1.5rem' }}>
-                    {post.highlights.map((item, idx) => (
-                      <li key={idx} style={{ marginBottom: '0.8rem', color: '#333' }}>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-              
-              {post.lowlights && post.lowlights.length > 0 && (
-                <>
-                  <h2 style={{ 
-                    fontSize: '1.8rem', 
-                    fontWeight: '800', 
-                    color: colors.primary, 
-                    marginTop: '2rem', 
-                    marginBottom: '1rem' 
-                  }}>
-                    ⚠️ O que não funciona
-                  </h2>
-                  <ul style={{ marginBottom: '2rem', paddingLeft: '1.5rem' }}>
-                    {post.lowlights.map((item, idx) => (
-                      <li key={idx} style={{ marginBottom: '0.8rem', color: '#333' }}>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </>
-          ) : (
-            <p style={{ marginBottom: '1.5rem' }}>{post.excerpt}</p>
-          )}
-        </div>
-      </div>
-    </article>
-  </div>
-);
-
-// ==========================================
-// COMPONENTE FOOTER
-// ==========================================
-const Footer = () => (
-  <footer style={{ 
-    background: colors.dark, 
-    color: colors.cream, 
-    padding: '3rem 2rem', 
-    marginTop: '4rem',
-    textAlign: 'center'
-  }}>
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <img 
-        src="/images/logo-minha-critica.png" 
-        alt="Minha Crítica Não Especializada" 
-        style={{ 
-          height: '100px', 
-          width: 'auto', 
-          marginBottom: '1.5rem', 
-          filter: 'drop-shadow(0 4px 12px rgba(255,167,38,0.4))' 
-        }} 
-      />
-      <p style={{ marginBottom: '1.5rem', color: colors.accent }}>
-        Opiniões sinceras sobre cinema e séries, sem frescura.
-      </p>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginBottom: '2rem' }}>
-        <a 
-          href="https://www.instagram.com/minhacriticanaoespecializada/" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          style={{ color: colors.secondary, textDecoration: 'none', fontWeight: '700' }}
-        >
-          Instagram
-        </a>
-      </div>
-      <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>
-        © 2025 Minha Crítica Não Especializada. Todos os direitos reservados.
-      </p>
-    </div>
-  </footer>
-);
-
-// ==========================================
-// COMPONENTE ADMIN PANEL (PAINEL DE CONTROLE)
-// ==========================================
-const AdminPanel = ({ onClose, onPostChange }) => {
-  const [token, setToken] = useState(localStorage.getItem('admin_token') || '');
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('admin_token'));
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ 
-    title: '', 
-    category: 'críticas', 
-    type: 'Filme', 
-    image: '', 
-    excerpt: '', 
-    rating: '', 
-    readTime: '', 
-    fullContent: '', 
-    highlights: '', 
-    lowlights: '' 
-  });
-
-  useEffect(() => { 
-    if (isLoggedIn) loadPosts(); 
-  }, [isLoggedIn]);
-
-  const loadPosts = async () => {
-    try { 
-      const data = await api.getPosts(); 
-      setPosts(data); 
-    } catch (e) { 
-      console.error(e); 
-    }
-  };
-
-  const handleLogin = async () => {
-    try {
-      setLoading(true);
-      const data = await api.login(username, password);
-      localStorage.setItem('admin_token', data.token);
-      setToken(data.token);
-      setIsLoggedIn(true);
-      setUsername(''); 
-      setPassword('');
-    } catch (e) { 
-      alert('❌ ' + e.message); 
-    } finally { 
-      setLoading(false); 
-    }
-  };
-
-  const handleLogout = () => { 
-    localStorage.removeItem('admin_token'); 
-    setToken(''); 
-    setIsLoggedIn(false); 
-  };
-
-  const handleSave = async () => {
-    if (!form.title || !form.excerpt) { 
-      alert('Preencha título e resumo!'); 
-      return; 
-    }
-    try {
-      setLoading(true);
-      const postData = {
-        ...form, 
-        rating: form.rating ? parseFloat(form.rating) : null,
-        date: editing?.date || new Date().toISOString().split('T')[0],
-        highlights: form.highlights ? form.highlights.split('\n').filter(h => h.trim()) : [],
-        lowlights: form.lowlights ? form.lowlights.split('\n').filter(l => l.trim()) : []
-      };
-      if (editing) { 
-        await api.updatePost(token, editing.id, postData); 
-        alert('✅ Post atualizado!'); 
-      } else { 
-        await api.createPost(token, postData); 
-        alert('✅ Post criado!'); 
+    if (process.env.NODE_ENV !== 'development') {
+      const localPosts = localStorage.getItem('minha-critica-posts');
+      if (localPosts && JSON.parse(localPosts).length > 0) {
+        console.log('📦 Carregando posts do localStorage...');
+        return JSON.parse(localPosts);
       }
-      setForm({ 
-        title: '', 
-        category: 'críticas', 
-        type: 'Filme', 
-        image: '', 
-        excerpt: '', 
-        rating: '', 
-        readTime: '', 
-        fullContent: '', 
-        highlights: '', 
-        lowlights: '' 
-      });
-      setEditing(null); 
-      loadPosts(); 
-      if (onPostChange) onPostChange();
-    } catch (e) { 
-      alert('❌ ' + e.message); 
-    } finally { 
-      setLoading(false); 
     }
-  };
-
-  const handleEdit = (post) => {
-    setEditing(post);
-    setForm({ 
-      title: post.title || '', 
-      category: post.category || 'críticas', 
-      type: post.type || 'Filme', 
-      image: post.image || '', 
-      excerpt: post.excerpt || '', 
-      rating: post.rating || '', 
-      readTime: post.readTime || '', 
-      fullContent: post.fullContent || '', 
-      highlights: post.highlights?.join('\n') || '', 
-      lowlights: post.lowlights?.join('\n') || '' 
-    });
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Tem certeza que deseja deletar este post?')) return;
-    try { 
-      await api.deletePost(token, id); 
-      alert('✅ Post deletado!'); 
-      loadPosts(); 
-      if (onPostChange) onPostChange(); 
-    } catch (e) { 
-      alert('❌ ' + e.message); 
-    }
-  };
-
-  const inputStyle = { 
-    width: '100%', 
-    padding: '0.8rem', 
-    border: `2px solid ${colors.cream}`, 
-    borderRadius: '8px', 
-    fontSize: '1rem', 
-    marginBottom: '1rem' 
-  };
-
-  // TELA DE LOGIN
-  if (!isLoggedIn) {
-    return (
-      <div style={{ 
-        minHeight: '100vh', 
-        background: colors.cream, 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        fontFamily: "'Poppins', sans-serif" 
-      }}>
-        <div style={{ 
-          background: 'white', 
-          padding: '2.5rem', 
-          borderRadius: '20px', 
-          boxShadow: '0 10px 40px rgba(0,0,0,0.15)', 
-          maxWidth: '400px', 
-          width: '100%' 
-        }}>
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <Lock size={48} color={colors.primary} />
-            <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: colors.dark, marginTop: '1rem' }}>
-              Painel Admin
-            </h1>
-            <p style={{ color: '#666' }}>Minha Crítica Não Especializada</p>
-          </div>
-          
-          <input 
-            type="text" 
-            placeholder="Usuário" 
-            value={username} 
-            onChange={e => setUsername(e.target.value)} 
-            style={inputStyle} 
-          />
-          <input 
-            type="password" 
-            placeholder="Senha" 
-            value={password} 
-            onChange={e => setPassword(e.target.value)}
-            onKeyPress={e => e.key === 'Enter' && handleLogin()} 
-            style={inputStyle} 
-          />
-          
-          <button 
-            onClick={handleLogin} 
-            disabled={loading} 
-            style={{ 
-              width: '100%', 
-              background: colors.primary, 
-              color: 'white', 
-              border: 'none', 
-              padding: '1rem', 
-              borderRadius: '10px', 
-              fontSize: '1.1rem', 
-              fontWeight: '700', 
-              cursor: 'pointer', 
-              marginBottom: '1rem' 
-            }}
-          >
-            {loading ? '⏳ Entrando...' : '🔐 Entrar'}
-          </button>
-          
-          <button 
-            onClick={onClose} 
-            style={{ 
-              width: '100%', 
-              background: '#999', 
-              color: 'white', 
-              border: 'none', 
-              padding: '0.8rem', 
-              borderRadius: '10px', 
-              fontSize: '1rem', 
-              cursor: 'pointer' 
-            }}
-          >
-            ← Voltar ao Blog
-          </button>
-          
-          <p style={{ marginTop: '1.5rem', fontSize: '0.85rem', color: '#999', textAlign: 'center' }}>
-            Usuário: admin | Senha: admin123
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // PAINEL ADMIN LOGADO
-  return (
-    <div style={{ 
-      minHeight: '100vh', 
-      background: colors.cream, 
-      fontFamily: "'Poppins', sans-serif" 
-    }}>
-      <header style={{ 
-        background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.dark} 100%)`, 
-        padding: '1rem 2rem', 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        flexWrap: 'wrap', 
-        gap: '1rem' 
-      }}>
-        <h1 style={{ color: 'white', fontSize: '1.5rem', fontWeight: '900' }}>
-          🎬 Painel Admin - Minha Crítica
-        </h1>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button onClick={onClose} style={{ 
-            background: colors.accent, 
-            color: 'white', 
-            border: 'none', 
-            padding: '0.6rem 1.2rem', 
-            borderRadius: '8px', 
-            cursor: 'pointer', 
-            fontWeight: '700' 
-          }}>
-            ← Voltar ao Blog
-          </button>
-          <button onClick={handleLogout} style={{ 
-            background: colors.secondary, 
-            color: 'white', 
-            border: 'none', 
-            padding: '0.6rem 1.2rem', 
-            borderRadius: '8px', 
-            cursor: 'pointer', 
-            fontWeight: '700', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.3rem' 
-          }}>
-            <LogOut size={16} />Sair
-          </button>
-        </div>
-      </header>
+    
+    try {
+      console.log('🌐 Tentando conectar com a API...');
+      const res = await fetch(`${API_URL}/posts`);
+      if (!res.ok) throw new Error('Erro ao buscar posts');
+      const data = await res.json();
       
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
-        {/* FORMULÁRIO DE CRIAÇÃO/EDIÇÃO */}
-        <div style={{ 
-          background: 'white', 
-          borderRadius: '15px', 
-          padding: '2rem', 
-          marginBottom: '2rem', 
-          boxShadow: '0 4px 15px rgba(0,0,0,0.1)' 
-        }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: colors.dark, marginBottom: '1.5rem' }}>
-            {editing ? '✏️ Editar Post' : '➕ Criar Novo Post'}
-          </h2>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-            <input 
-              type="text" 
-              placeholder="Título *" 
-              value={form.title} 
-              onChange={e => setForm({ ...form, title: e.target.value })} 
-              style={inputStyle} 
-            />
-            <select 
-              value={form.category} 
-              onChange={e => setForm({ ...form, category: e.target.value })} 
-              style={inputStyle}
-            >
-              <option value="críticas">Críticas</option>
-              <option value="séries">Séries</option>
-              <option value="notícias">Notícias</option>
-            </select>
-            <select 
-              value={form.type} 
-              onChange={e => setForm({ ...form, type: e.target.value })} 
-              style={inputStyle}
-            >
-              <option value="Filme">Filme</option>
-              <option value="Série">Série</option>
-              <option value="Documentário">Documentário</option>
-              <option value="Notícia">Notícia</option>
-            </select>
-            <input 
-              type="text" 
-              placeholder="URL da Imagem" 
-              value={form.image} 
-              onChange={e => setForm({ ...form, image: e.target.value })} 
-              style={inputStyle} 
-            />
-            <input 
-              type="number" 
-              placeholder="Nota (0-5)" 
-              min="0" 
-              max="5" 
-              step="0.5" 
-              value={form.rating} 
-              onChange={e => setForm({ ...form, rating: e.target.value })} 
-              style={inputStyle} 
-            />
-            <input 
-              type="text" 
-              placeholder="Tempo de leitura (ex: 5 min)" 
-              value={form.readTime} 
-              onChange={e => setForm({ ...form, readTime: e.target.value })} 
-              style={inputStyle} 
-            />
-          </div>
-          
-          <textarea 
-            placeholder="Resumo *" 
-            rows="3" 
-            value={form.excerpt} 
-            onChange={e => setForm({ ...form, excerpt: e.target.value })} 
-            style={{ ...inputStyle, resize: 'vertical' }} 
-          />
-          
-          <textarea 
-            placeholder="Conteúdo completo (separe parágrafos com linha em branco)" 
-            rows="8" 
-            value={form.fullContent} 
-            onChange={e => setForm({ ...form, fullContent: e.target.value })} 
-            style={{ ...inputStyle, resize: 'vertical' }} 
-          />
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <textarea 
-              placeholder="✅ Pontos positivos (um por linha)" 
-              rows="4" 
-              value={form.highlights} 
-              onChange={e => setForm({ ...form, highlights: e.target.value })} 
-              style={{ ...inputStyle, resize: 'vertical' }} 
-            />
-            <textarea 
-              placeholder="⚠️ Pontos negativos (um por linha)" 
-              rows="4" 
-              value={form.lowlights} 
-              onChange={e => setForm({ ...form, lowlights: e.target.value })} 
-              style={{ ...inputStyle, resize: 'vertical' }} 
-            />
-          </div>
-          
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-            <button 
-              onClick={handleSave} 
-              disabled={loading} 
-              style={{ 
-                background: colors.primary, 
-                color: 'white', 
-                border: 'none', 
-                padding: '1rem 2rem', 
-                borderRadius: '10px', 
-                fontSize: '1rem', 
-                fontWeight: '700', 
-                cursor: 'pointer', 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '0.5rem' 
-              }}
-            >
-              <Save size={18} /> 
-              {loading ? 'Salvando...' : editing ? 'Atualizar' : 'Criar Post'}
-            </button>
-            
-            {editing && (
-              <button 
-                onClick={() => { 
-                  setEditing(null); 
-                  setForm({ 
-                    title: '', 
-                    category: 'críticas', 
-                    type: 'Filme', 
-                    image: '', 
-                    excerpt: '', 
-                    rating: '', 
-                    readTime: '', 
-                    fullContent: '', 
-                    highlights: '', 
-                    lowlights: '' 
-                  }); 
-                }} 
-                style={{ 
-                  background: '#999', 
-                  color: 'white', 
-                  border: 'none', 
-                  padding: '1rem 2rem', 
-                  borderRadius: '10px', 
-                  fontSize: '1rem', 
-                  fontWeight: '700', 
-                  cursor: 'pointer', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '0.5rem' 
-                }}
-              >
-                <X size={18} /> Cancelar
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* LISTA DE POSTS EXISTENTES */}
-        <div style={{ 
-          background: 'white', 
-          borderRadius: '15px', 
-          padding: '2rem', 
-          boxShadow: '0 4px 15px rgba(0,0,0,0.1)' 
-        }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: colors.dark, marginBottom: '1.5rem' }}>
-            📋 Posts Cadastrados ({posts.length})
-          </h2>
-          
-          {posts.length === 0 ? (
-            <p style={{ color: '#999', textAlign: 'center', padding: '2rem' }}>
-              Nenhum post cadastrado ainda.
-            </p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {posts.map(post => (
-                <div key={post.id} style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  padding: '1rem', 
-                  background: colors.cream, 
-                  borderRadius: '10px', 
-                  flexWrap: 'wrap', 
-                  gap: '1rem' 
-                }}>
-                  <div style={{ flex: 1, minWidth: '200px' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                      <span style={{ 
-                        background: colors.primary, 
-                        color: 'white', 
-                        padding: '0.2rem 0.6rem', 
-                        borderRadius: '5px', 
-                        fontSize: '0.75rem', 
-                        fontWeight: '700' 
-                      }}>
-                        {post.type}
-                      </span>
-                      {post.rating && (
-                        <span style={{ 
-                          background: colors.gold, 
-                          color: colors.dark, 
-                          padding: '0.2rem 0.6rem', 
-                          borderRadius: '5px', 
-                          fontSize: '0.75rem', 
-                          fontWeight: '700' 
-                        }}>
-                          ⭐ {post.rating}
-                        </span>
-                      )}
-                    </div>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: colors.dark, marginBottom: '0.3rem' }}>
-                      {post.title}
-                    </h3>
-                    <p style={{ fontSize: '0.85rem', color: '#666' }}>
-                      {post.excerpt?.substring(0, 80)}...
-                    </p>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button 
-                      onClick={() => handleEdit(post)} 
-                      style={{ 
-                        background: colors.accent, 
-                        color: 'white', 
-                        border: 'none', 
-                        padding: '0.6rem', 
-                        borderRadius: '8px', 
-                        cursor: 'pointer' 
-                      }}
-                    >
-                      <Edit size={18} />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(post.id)} 
-                      style={{ 
-                        background: colors.primary, 
-                        color: 'white', 
-                        border: 'none', 
-                        padding: '0.6rem', 
-                        borderRadius: '8px', 
-                        cursor: 'pointer' 
-                      }}
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
-  );
+      localStorage.setItem('minha-critica-posts', JSON.stringify(data));
+      console.log('✅ Posts carregados da API e salvos no cache');
+      return data;
+    } catch (error) {
+      console.log('❌ Erro na API, usando fallback...');
+      const localPosts = localStorage.getItem('minha-critica-posts');
+      if (localPosts && JSON.parse(localPosts).length > 0) {
+        return JSON.parse(localPosts);
+      }
+      throw new Error('Não foi possível carregar os posts');
+    }
+  },
+  
+  async login(username, password) {
+    try {
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      if (!res.ok) throw new Error('Usuário ou senha inválidos');
+      return res.json();
+    } catch (error) {
+      throw new Error('Erro de conexão. Modo offline ativado.');
+    }
+  }
 };
 
-// ==========================================
-// COMPONENTE CONTATO
-// ==========================================
-const Contato = () => (
-  <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-    <div style={{ 
-      background: 'white', 
-      padding: '3rem', 
-      borderRadius: '20px', 
-      boxShadow: '0 10px 40px rgba(0,0,0,0.15)' 
-    }}>
-      <h2 style={{ fontSize: '2.5rem', fontWeight: '900', color: colors.dark, marginBottom: '1rem' }}>
-        Entre em Contato
-      </h2>
-      <p style={{ marginBottom: '2rem', color: '#666' }}>
-        Tem uma sugestão? Quer colaborar? Mande sua mensagem!
-      </p>
-      
-      <input 
-        type="text" 
-        placeholder="Seu nome" 
-        style={{ 
-          width: '100%', 
-          padding: '1rem', 
-          marginBottom: '1rem', 
-          border: `2px solid ${colors.cream}`, 
-          borderRadius: '10px', 
-          fontSize: '1rem' 
-        }} 
-      />
-      <input 
-        type="email" 
-        placeholder="Seu e-mail" 
-        style={{ 
-          width: '100%', 
-          padding: '1rem', 
-          marginBottom: '1rem', 
-          border: `2px solid ${colors.cream}`, 
-          borderRadius: '10px', 
-          fontSize: '1rem' 
-        }} 
-      />
-      <textarea 
-        placeholder="Sua mensagem" 
-        rows="6" 
-        style={{ 
-          width: '100%', 
-          padding: '1rem', 
-          marginBottom: '1.5rem', 
-          border: `2px solid ${colors.cream}`, 
-          borderRadius: '10px', 
-          fontSize: '1rem', 
-          fontFamily: 'inherit' 
-        }} 
-      />
-      <button style={{ 
-        background: colors.primary, 
-        color: 'white', 
-        border: 'none', 
-        padding: '1rem 2rem', 
-        borderRadius: '25px', 
-        fontSize: '1.1rem', 
-        fontWeight: '700', 
-        cursor: 'pointer', 
-        width: '100%' 
-      }}>
-        Enviar Mensagem
-      </button>
-    </div>
-  </div>
-);
-
-// ==========================================
-// APP PRINCIPAL
-// ==========================================
 function App() {
+  // Estados principais
   const [currentPage, setCurrentPage] = useState('home');
   const [selectedPost, setSelectedPost] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [darkMode, setDarkMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [adminLogin, setAdminLogin] = useState({ username: '', password: '' });
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [showNewsletter, setShowNewsletter] = useState(false);
+  const [comments, setComments] = useState({});
+  const [newComment, setNewComment] = useState({ name: '', email: '', text: '' });
 
-  // Carrega posts da API
+  // Carregar posts e comentários
   useEffect(() => {
     loadPosts();
+    loadComments();
+    loadNewsletterSubscribers();
+    
+    // Mostrar newsletter popup após 5 segundos
+    const timer = setTimeout(() => {
+      const hasSubscribed = localStorage.getItem('newsletter-subscribed');
+      if (!hasSubscribed) {
+        setShowNewsletter(true);
+      }
+    }, 5000);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const loadPosts = async () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('🔄 Carregando posts do MySQL...');
       const data = await api.getPosts();
-      console.log(`✅ ${data.length} posts carregados do MySQL!`);
       setPosts(data);
     } catch (err) {
-      console.error('❌ Erro ao carregar posts do MySQL:', err);
-      setError('Erro ao conectar com o servidor. Usando dados locais.');
       const localPosts = localStorage.getItem('minha-critica-posts');
-      if (localPosts) { 
-        setPosts(JSON.parse(localPosts)); 
-      } else { 
-        setPosts([]); 
+      if (localPosts && JSON.parse(localPosts).length > 0) {
+        setPosts(JSON.parse(localPosts));
+        setError('Modo offline - posts carregados do cache local');
+      } else {
+        setError('Não foi possível conectar com o servidor. Use o painel admin para criar seus primeiros posts.');
+        setPosts([]);
       }
-    } finally { 
-      setLoading(false); 
+    } finally {
+      setLoading(false);
     }
   };
 
-  const filteredPosts = currentPage === 'home' 
-    ? posts 
-    : posts.filter(post => post.category === currentPage);
+  const loadComments = () => {
+    const savedComments = localStorage.getItem('minha-critica-comments');
+    if (savedComments) {
+      setComments(JSON.parse(savedComments));
+    }
+  };
 
-  // PAINEL ADMIN
-  if (showAdmin) {
+  const loadNewsletterSubscribers = () => {
+    // Carregar subscribers do localStorage
+    const subscribers = localStorage.getItem('newsletter-subscribers');
+    return subscribers ? JSON.parse(subscribers) : [];
+  };
+
+  // Banner de Slides
+  const SlideshowBanner = () => {
+    const [currentSlide, setCurrentSlide] = useState(0);
+    
+    const slides = [
+      {
+        title: "Críticas Sem Frescura",
+        description: "Opiniões sinceras sobre os lançamentos do cinema",
+        background: "linear-gradient(135deg, #D32F2F 0%, #1A1A2E 100%)",
+      },
+      {
+        title: "Séries Imperdíveis",
+        description: "Análises detalhadas das melhores séries",
+        background: "linear-gradient(135deg, #4DB6AC 0%, #1A1A2E 100%)",
+      },
+      {
+        title: "Notícias Quentes",
+        description: "Fique por dentro do mundo do entretenimento",
+        background: "linear-gradient(135deg, #FFA726 0%, #1A1A2E 100%)",
+      }
+    ];
+
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % slides.length);
+      }, 5000);
+      return () => clearInterval(interval);
+    }, [slides.length]);
+
+    if (currentPage !== 'home') return null;
+
     return (
-      <AdminPanel 
-        onClose={() => { 
-          setShowAdmin(false); 
-          loadPosts(); 
-        }} 
-        onPostChange={loadPosts} 
-      />
+      <section style={{
+        height: '400px',
+        position: 'relative',
+        overflow: 'hidden',
+        borderRadius: '20px',
+        marginBottom: '3rem',
+        boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
+      }}>
+        {slides.map((slide, index) => (
+          <div
+            key={index}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              background: slide.background,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: index === currentSlide ? 1 : 0,
+              transition: 'opacity 0.8s ease-in-out',
+              padding: '2rem'
+            }}
+          >
+            <div style={{ 
+              textAlign: 'center', 
+              color: 'white',
+              maxWidth: '600px'
+            }}>
+              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
+                {slide.emoji}
+              </div>
+              <h1 style={{
+                fontSize: '3rem',
+                fontWeight: '900',
+                marginBottom: '1rem',
+                textShadow: '0 4px 15px rgba(0,0,0,0.5)'
+              }}>
+                {slide.title}
+              </h1>
+              <p style={{
+                fontSize: '1.3rem',
+                opacity: 0.9,
+                marginBottom: '2rem'
+              }}>
+                {slide.description}
+              </p>
+              <button
+                onClick={() => setCurrentPage(slide.title.includes('Críticas') ? 'críticas' : 
+                           slide.title.includes('Séries') ? 'séries' : 'notícias')}
+                style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  border: '2px solid white',
+                  color: 'white',
+                  padding: '1rem 2rem',
+                  borderRadius: '25px',
+                  fontSize: '1.1rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(10px)',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(255,255,255,0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'rgba(255,255,255,0.2)';
+                }}
+              >
+                Explorar Agora
+              </button>
+            </div>
+          </div>
+        ))}
+        
+        {/* Indicadores */}
+        <div style={{
+          position: 'absolute',
+          bottom: '2rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          gap: '0.5rem'
+        }}>
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              style={{
+                width: '12px',
+                height: '12px',
+                borderRadius: '50%',
+                border: 'none',
+                background: index === currentSlide ? '#FFA726' : 'rgba(255,255,255,0.5)',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+            />
+          ))}
+        </div>
+      </section>
     );
-  }
+  };
 
-  // VISUALIZAÇÃO DETALHADA DO POST
-  if (selectedPost) {
+  // Sistema de Admin com Gerenciamento de Posts
+  const AdminPanel = () => {
+    const [token, setToken] = useState(localStorage.getItem('admin_token') || '');
+    const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('admin_token'));
+    const [form, setForm] = useState({ 
+      title: '', 
+      category: 'críticas', 
+      type: 'Filme', 
+      image: '', 
+      excerpt: '', 
+      rating: '', 
+      readTime: '', 
+      fullContent: '', 
+      highlights: '', 
+      lowlights: '' 
+    });
+    const [adminLoading, setAdminLoading] = useState(false);
+    const [editingPost, setEditingPost] = useState(null);
+
+    const handleLogin = async () => {
+      if (adminLogin.username === 'admin' && adminLogin.password === 'admin123') {
+        const offlineToken = 'offline-token-' + Date.now();
+        localStorage.setItem('admin_token', offlineToken);
+        setToken(offlineToken);
+        setIsLoggedIn(true);
+        setAdminLogin({ username: '', password: '' });
+        return;
+      }
+
+      try {
+        setAdminLoading(true);
+        const data = await api.login(adminLogin.username, adminLogin.password);
+        localStorage.setItem('admin_token', data.token);
+        setToken(data.token);
+        setIsLoggedIn(true);
+        setAdminLogin({ username: '', password: '' });
+      } catch (e) { 
+        alert('❌ ' + e.message); 
+      } finally { 
+        setAdminLoading(false); 
+      }
+    };
+
+    const handleLogout = () => { 
+      localStorage.removeItem('admin_token'); 
+      setToken(''); 
+      setIsLoggedIn(false); 
+    };
+
+    const handleSave = async () => {
+      if (!form.title || !form.excerpt) { 
+        alert('Preencha título e resumo!'); 
+        return; 
+      }
+      try {
+        setAdminLoading(true);
+        const postData = {
+          ...form, 
+          rating: form.rating ? parseFloat(form.rating) : null,
+          date: new Date().toISOString().split('T')[0],
+          highlights: form.highlights ? form.highlights.split('\n').filter(h => h.trim()) : [],
+          lowlights: form.lowlights ? form.lowlights.split('\n').filter(l => l.trim()) : []
+        };
+        
+        let updatedPosts;
+        if (editingPost) {
+          // Editar post existente
+          updatedPosts = posts.map(post => 
+            post.id === editingPost.id 
+              ? { ...post, ...postData, id: editingPost.id }
+              : post
+          );
+          setEditingPost(null);
+        } else {
+          // Criar novo post
+          const newPost = {
+            id: Date.now(),
+            ...postData
+          };
+          updatedPosts = [...posts, newPost];
+        }
+        
+        setPosts(updatedPosts);
+        localStorage.setItem('minha-critica-posts', JSON.stringify(updatedPosts));
+        
+        alert(`✅ Post ${editingPost ? 'atualizado' : 'criado'} com sucesso!`);
+        setForm({ 
+          title: '', category: 'críticas', type: 'Filme', image: '', excerpt: '', 
+          rating: '', readTime: '', fullContent: '', highlights: '', lowlights: '' 
+        });
+      } catch (e) { 
+        alert('❌ ' + e.message); 
+      } finally { 
+        setAdminLoading(false); 
+      }
+    };
+
+    const handleEdit = (post) => {
+      setEditingPost(post);
+      setForm({
+        title: post.title,
+        category: post.category,
+        type: post.type,
+        image: post.image || '',
+        excerpt: post.excerpt,
+        rating: post.rating || '',
+        readTime: post.readTime || '',
+        fullContent: post.fullContent || '',
+        highlights: post.highlights ? post.highlights.join('\n') : '',
+        lowlights: post.lowlights ? post.lowlights.join('\n') : ''
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleDelete = (postId) => {
+      if (window.confirm('Tem certeza que deseja excluir este post?')) {
+        const updatedPosts = posts.filter(post => post.id !== postId);
+        setPosts(updatedPosts);
+        localStorage.setItem('minha-critica-posts', JSON.stringify(updatedPosts));
+        alert('✅ Post excluído com sucesso!');
+      }
+    };
+
+    const cancelEdit = () => {
+      setEditingPost(null);
+      setForm({ 
+        title: '', category: 'críticas', type: 'Filme', image: '', excerpt: '', 
+        rating: '', readTime: '', fullContent: '', highlights: '', lowlights: '' 
+      });
+    };
+
+    // TELA DE LOGIN DO ADMIN
+    if (!isLoggedIn) {
+      return (
+        <div style={{ 
+          minHeight: '100vh', 
+          background: darkMode ? '#0a0a1a' : '#FFF8DC', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          fontFamily: "'Poppins', sans-serif" 
+        }}>
+          <div style={{ 
+            background: darkMode ? '#1a1a2e' : 'white', 
+            padding: '2.5rem', 
+            borderRadius: '20px', 
+            boxShadow: '0 10px 40px rgba(0,0,0,0.15)', 
+            maxWidth: '400px', 
+            width: '100%' 
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div style={{ fontSize: '3rem' }}>🔐</div>
+              <h1 style={{ 
+                fontSize: '1.8rem', 
+                fontWeight: '900', 
+                color: darkMode ? 'white' : '#1A1A2E', 
+                marginTop: '1rem' 
+              }}>
+                Painel Admin
+              </h1>
+              <p style={{ color: darkMode ? '#cccccc' : '#666666' }}>Minha Crítica Não Especializada</p>
+            </div>
+            
+            <input 
+              type="text" 
+              placeholder="Usuário" 
+              value={adminLogin.username}
+              onChange={e => setAdminLogin({...adminLogin, username: e.target.value})} 
+              style={{ 
+                width: '100%', 
+                padding: '0.8rem', 
+                border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                borderRadius: '8px', 
+                fontSize: '1rem', 
+                marginBottom: '1rem',
+                background: darkMode ? '#2d2d44' : 'white',
+                color: darkMode ? 'white' : '#333'
+              }} 
+            />
+            <input 
+              type="password" 
+              placeholder="Senha" 
+              value={adminLogin.password}
+              onChange={e => setAdminLogin({...adminLogin, password: e.target.value})}
+              onKeyPress={e => e.key === 'Enter' && handleLogin()} 
+              style={{ 
+                width: '100%', 
+                padding: '0.8rem', 
+                border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                borderRadius: '8px', 
+                fontSize: '1rem', 
+                marginBottom: '1rem',
+                background: darkMode ? '#2d2d44' : 'white',
+                color: darkMode ? 'white' : '#333'
+              }} 
+            />
+            
+            <button 
+              onClick={handleLogin} 
+              disabled={adminLoading} 
+              style={{ 
+                width: '100%', 
+                background: '#D32F2F', 
+                color: 'white', 
+                border: 'none', 
+                padding: '1rem', 
+                borderRadius: '10px', 
+                fontSize: '1.1rem', 
+                fontWeight: '700', 
+                cursor: 'pointer', 
+                marginBottom: '1rem' 
+              }}
+            >
+              {adminLoading ? '⏳ Entrando...' : '🔐 Entrar'}
+            </button>
+            
+            <button 
+              onClick={() => setShowAdmin(false)} 
+              style={{ 
+                width: '100%', 
+                background: '#999', 
+                color: 'white', 
+                border: 'none', 
+                padding: '0.8rem', 
+                borderRadius: '10px', 
+                fontSize: '1rem', 
+                cursor: 'pointer' 
+              }}
+            >
+              ← Voltar ao Blog
+            </button>
+            
+            <p style={{ marginTop: '1.5rem', fontSize: '0.85rem', color: '#999', textAlign: 'center' }}>
+              Usuário: admin | Senha: admin123
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // PAINEL ADMIN LOGADO
     return (
       <div style={{ 
         minHeight: '100vh', 
-        background: colors.cream, 
+        background: darkMode ? '#0a0a1a' : '#FFF8DC', 
         fontFamily: "'Poppins', sans-serif" 
       }}>
-        <Header 
-          currentPage={currentPage} 
-          setCurrentPage={setCurrentPage} 
-          onLogoDoubleClick={() => setShowAdmin(true)} 
-        />
-        <main style={{ padding: '3rem 2rem' }}>
-          <PostDetail 
-            post={selectedPost} 
-            onBack={() => setSelectedPost(null)} 
-          />
+        <header style={{ 
+          background: 'linear-gradient(135deg, #D32F2F 0%, #1A1A2E 100%)', 
+          padding: '1rem 2rem', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem'
+        }}>
+          <div>
+            <h1 style={{ color: 'white', fontSize: '1.5rem', fontWeight: '900' }}>
+              🎬 Painel Admin - Minha Crítica
+            </h1>
+            <p style={{ color: '#FFA726', fontSize: '0.9rem', marginTop: '0.2rem' }}>
+              {posts.length} posts • {error ? '🔴 Modo Offline' : '🟢 Conectado'}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button onClick={() => setShowAdmin(false)} style={{ 
+              background: '#4DB6AC', 
+              color: 'white', 
+              border: 'none', 
+              padding: '0.6rem 1.2rem', 
+              borderRadius: '8px', 
+              cursor: 'pointer', 
+              fontWeight: '700' 
+            }}>
+              ← Voltar ao Blog
+            </button>
+            <button onClick={handleLogout} style={{ 
+              background: '#FFA726', 
+              color: 'white', 
+              border: 'none', 
+              padding: '0.6rem 1.2rem', 
+              borderRadius: '8px', 
+              cursor: 'pointer', 
+              fontWeight: '700'
+            }}>
+              Sair
+            </button>
+          </div>
+        </header>
+        
+        <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+          {/* FORMULÁRIO DE CRIAÇÃO/EDIÇÃO */}
+          <div style={{ 
+            background: darkMode ? '#1a1a2e' : 'white', 
+            borderRadius: '15px', 
+            padding: '2rem', 
+            marginBottom: '2rem', 
+            boxShadow: '0 4px 15px rgba(0,0,0,0.1)' 
+          }}>
+            <h2 style={{ 
+              fontSize: '1.5rem', 
+              fontWeight: '800', 
+              color: darkMode ? 'white' : '#1A1A2E', 
+              marginBottom: '1.5rem' 
+            }}>
+              {editingPost ? '✏️ Editar Post' : '➕ Criar Novo Post'}
+            </h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+              <input 
+                type="text" 
+                placeholder="Título *" 
+                value={form.title} 
+                onChange={e => setForm({ ...form, title: e.target.value })} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.8rem', 
+                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                  borderRadius: '8px', 
+                  fontSize: '1rem', 
+                  marginBottom: '1rem',
+                  background: darkMode ? '#2d2d44' : 'white',
+                  color: darkMode ? 'white' : '#333'
+                }} 
+              />
+              <select 
+                value={form.category} 
+                onChange={e => setForm({ ...form, category: e.target.value })} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.8rem', 
+                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                  borderRadius: '8px', 
+                  fontSize: '1rem', 
+                  marginBottom: '1rem',
+                  background: darkMode ? '#2d2d44' : 'white',
+                  color: darkMode ? 'white' : '#333'
+                }}
+              >
+                <option value="críticas">Críticas</option>
+                <option value="séries">Séries</option>
+                <option value="notícias">Notícias</option>
+              </select>
+              <select 
+                value={form.type} 
+                onChange={e => setForm({ ...form, type: e.target.value })} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.8rem', 
+                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                  borderRadius: '8px', 
+                  fontSize: '1rem', 
+                  marginBottom: '1rem',
+                  background: darkMode ? '#2d2d44' : 'white',
+                  color: darkMode ? 'white' : '#333'
+                }}
+              >
+                <option value="Filme">Filme</option>
+                <option value="Série">Série</option>
+                <option value="Documentário">Documentário</option>
+                <option value="Notícia">Notícia</option>
+              </select>
+              <input 
+                type="text" 
+                placeholder="URL da Imagem" 
+                value={form.image} 
+                onChange={e => setForm({ ...form, image: e.target.value })} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.8rem', 
+                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                  borderRadius: '8px', 
+                  fontSize: '1rem', 
+                  marginBottom: '1rem',
+                  background: darkMode ? '#2d2d44' : 'white',
+                  color: darkMode ? 'white' : '#333'
+                }} 
+              />
+              <input 
+                type="number" 
+                placeholder="Nota (0-5)" 
+                min="0" 
+                max="5" 
+                step="0.5" 
+                value={form.rating} 
+                onChange={e => setForm({ ...form, rating: e.target.value })} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.8rem', 
+                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                  borderRadius: '8px', 
+                  fontSize: '1rem', 
+                  marginBottom: '1rem',
+                  background: darkMode ? '#2d2d44' : 'white',
+                  color: darkMode ? 'white' : '#333'
+                }} 
+              />
+              <input 
+                type="text" 
+                placeholder="Tempo de leitura (ex: 5 min)" 
+                value={form.readTime} 
+                onChange={e => setForm({ ...form, readTime: e.target.value })} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.8rem', 
+                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                  borderRadius: '8px', 
+                  fontSize: '1rem', 
+                  marginBottom: '1rem',
+                  background: darkMode ? '#2d2d44' : 'white',
+                  color: darkMode ? 'white' : '#333'
+                }} 
+              />
+            </div>
+            
+            <textarea 
+              placeholder="Resumo *" 
+              rows="3" 
+              value={form.excerpt} 
+              onChange={e => setForm({ ...form, excerpt: e.target.value })} 
+              style={{ 
+                width: '100%', 
+                padding: '0.8rem', 
+                border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                borderRadius: '8px', 
+                fontSize: '1rem', 
+                marginBottom: '1rem',
+                background: darkMode ? '#2d2d44' : 'white',
+                color: darkMode ? 'white' : '#333',
+                resize: 'vertical'
+              }} 
+            />
+            
+            <textarea 
+              placeholder="Conteúdo completo (separe parágrafos com linha em branco)" 
+              rows="8" 
+              value={form.fullContent} 
+              onChange={e => setForm({ ...form, fullContent: e.target.value })} 
+              style={{ 
+                width: '100%', 
+                padding: '0.8rem', 
+                border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                borderRadius: '8px', 
+                fontSize: '1rem', 
+                marginBottom: '1rem',
+                background: darkMode ? '#2d2d44' : 'white',
+                color: darkMode ? 'white' : '#333',
+                resize: 'vertical'
+              }} 
+            />
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <textarea 
+                placeholder="✅ Pontos positivos (um por linha)" 
+                rows="4" 
+                value={form.highlights} 
+                onChange={e => setForm({ ...form, highlights: e.target.value })} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.8rem', 
+                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                  borderRadius: '8px', 
+                  fontSize: '1rem', 
+                  marginBottom: '1rem',
+                  background: darkMode ? '#2d2d44' : 'white',
+                  color: darkMode ? 'white' : '#333',
+                  resize: 'vertical'
+                }} 
+              />
+              <textarea 
+                placeholder="⚠️ Pontos negativos (um por linha)" 
+                rows="4" 
+                value={form.lowlights} 
+                onChange={e => setForm({ ...form, lowlights: e.target.value })} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.8rem', 
+                  border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
+                  borderRadius: '8px', 
+                  fontSize: '1rem', 
+                  marginBottom: '1rem',
+                  background: darkMode ? '#2d2d44' : 'white',
+                  color: darkMode ? 'white' : '#333',
+                  resize: 'vertical'
+                }} 
+              />
+            </div>
+            
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+              <button 
+                onClick={handleSave} 
+                disabled={adminLoading} 
+                style={{ 
+                  background: '#D32F2F', 
+                  color: 'white', 
+                  border: 'none', 
+                  padding: '1rem 2rem', 
+                  borderRadius: '10px', 
+                  fontSize: '1rem', 
+                  fontWeight: '700', 
+                  cursor: 'pointer'
+                }}
+              >
+                {adminLoading ? 'Salvando...' : editingPost ? '💾 Atualizar Post' : '💾 Criar Post'}
+              </button>
+              
+              {editingPost && (
+                <button 
+                  onClick={cancelEdit}
+                  style={{ 
+                    background: '#999', 
+                    color: 'white', 
+                    border: 'none', 
+                    padding: '1rem 2rem', 
+                    borderRadius: '10px', 
+                    fontSize: '1rem', 
+                    fontWeight: '700', 
+                    cursor: 'pointer'
+                  }}
+                >
+                  ❌ Cancelar Edição
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* LISTA DE POSTS EXISTENTES */}
+          <div style={{ 
+            background: darkMode ? '#1a1a2e' : 'white', 
+            borderRadius: '15px', 
+            padding: '2rem', 
+            boxShadow: '0 4px 15px rgba(0,0,0,0.1)' 
+          }}>
+            <h2 style={{ 
+              fontSize: '1.5rem', 
+              fontWeight: '800', 
+              color: darkMode ? 'white' : '#1A1A2E', 
+              marginBottom: '1.5rem' 
+            }}>
+              📝 Posts Existentes ({posts.length})
+            </h2>
+            
+            {posts.length === 0 ? (
+              <p style={{ color: darkMode ? '#cccccc' : '#666666', textAlign: 'center', padding: '2rem' }}>
+                Nenhum post criado ainda.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {posts.map(post => (
+                  <div key={post.id} style={{
+                    background: darkMode ? '#2d2d44' : '#FFF8DC',
+                    padding: '1.5rem',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '1rem'
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ 
+                        color: darkMode ? 'white' : '#1A1A2E', 
+                        marginBottom: '0.5rem',
+                        fontSize: '1.1rem'
+                      }}>
+                        {post.title}
+                      </h3>
+                      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                        <span style={{ 
+                          background: '#D32F2F', 
+                          color: 'white', 
+                          padding: '0.3rem 0.8rem', 
+                          borderRadius: '15px', 
+                          fontSize: '0.8rem' 
+                        }}>
+                          {post.category}
+                        </span>
+                        <span style={{ 
+                          background: '#4DB6AC', 
+                          color: 'white', 
+                          padding: '0.3rem 0.8rem', 
+                          borderRadius: '15px', 
+                          fontSize: '0.8rem' 
+                        }}>
+                          {post.type}
+                        </span>
+                        <span style={{ color: darkMode ? '#cccccc' : '#666666', fontSize: '0.9rem' }}>
+                          📅 {new Date(post.date).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <button 
+                        onClick={() => handleEdit(post)}
+                        style={{
+                          background: '#FFA726',
+                          color: 'white',
+                          border: 'none',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '5px',
+                          cursor: 'pointer',
+                          fontSize: '0.9rem'
+                        }}
+                      >
+                        ✏️ Editar
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(post.id)}
+                        style={{
+                          background: '#D32F2F',
+                          color: 'white',
+                          border: 'none',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '5px',
+                          cursor: 'pointer',
+                          fontSize: '0.9rem'
+                        }}
+                      >
+                        🗑️ Excluir
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </main>
-        <Footer />
       </div>
     );
-  }
+  };
 
-  // PÁGINA DE CONTATO
-  if (currentPage === 'contato') {
+  // Componente Header
+  const Header = () => {
+    const handleSearch = (e) => {
+      e.preventDefault();
+      if (searchTerm.trim()) {
+        setCurrentPage('search');
+        setShowSearch(false);
+      }
+    };
+
+    const menuItems = [
+      { name: 'Início', page: 'home' },
+      { name: 'Críticas', page: 'críticas' },
+      { name: 'Séries', page: 'séries' },
+      { name: 'Notícias', page: 'notícias' },
+      { name: 'Contato', page: 'contato' }
+    ];
+
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        background: colors.cream, 
-        fontFamily: "'Poppins', sans-serif" 
+      <header style={{
+        background: 'linear-gradient(135deg, #D32F2F 0%, #1A1A2E 100%)',
+        padding: '1rem 0',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 1000
       }}>
-        <Header 
-          currentPage={currentPage} 
-          setCurrentPage={setCurrentPage} 
-          onLogoDoubleClick={() => setShowAdmin(true)} 
-        />
-        <main style={{ padding: '3rem 2rem' }}>
-          <Contato />
-        </main>
-        <Footer />
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between', 
+            flexWrap: 'wrap', 
+            gap: '1rem' 
+          }}>
+            
+            {/* LOGO */}
+            <div 
+              style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+              onClick={() => {
+                setCurrentPage('home');
+                setSearchTerm('');
+              }}
+              onDoubleClick={() => setShowAdmin(true)}
+              title="Clique para início | Duplo clique para admin"
+            >
+              <img 
+                src="/images/logo-minha-critica.png" 
+                alt="Minha Crítica Não Especializada" 
+                style={{ 
+                  height: '120px', 
+                  width: 'auto', 
+                  marginTop: '-10px',
+                  filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.45))', 
+                  transition: 'transform 0.3s ease'
+                }}
+                onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+              />
+            </div>
+
+            {/* Menu e Controles */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+              <nav style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {menuItems.map(item => (
+                  <button 
+                    key={item.page}
+                    onClick={() => {
+                      setCurrentPage(item.page);
+                      setSearchTerm('');
+                    }}
+                    style={{
+                      background: currentPage === item.page ? '#FFA726' : 'transparent',
+                      color: 'white',
+                      border: `2px solid ${currentPage === item.page ? '#FFA726' : 'transparent'}`,
+                      padding: '0.6rem 1rem',
+                      borderRadius: '25px',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      fontWeight: '700',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    {item.name}
+                  </button>
+                ))}
+              </nav>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {/* Botão Busca */}
+                <div style={{ position: 'relative' }}>
+                  <button 
+                    onClick={() => setShowSearch(!showSearch)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'white',
+                      padding: '0.5rem',
+                      borderRadius: '50%',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                    title="Buscar posts"
+                  >
+                    🔍
+                  </button>
+                  
+                  {showSearch && (
+                    <form 
+                      onSubmit={handleSearch}
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        right: 0,
+                        marginTop: '0.5rem',
+                        display: 'flex',
+                        background: 'white',
+                        borderRadius: '25px',
+                        overflow: 'hidden',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+                        minWidth: '250px'
+                      }}
+                    >
+                      <input
+                        type="text"
+                        placeholder="Buscar posts..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{
+                          border: 'none',
+                          padding: '0.8rem 1rem',
+                          fontSize: '0.9rem',
+                          flex: 1,
+                          outline: 'none'
+                        }}
+                        autoFocus
+                      />
+                      <button 
+                        type="submit"
+                        style={{
+                          background: '#D32F2F',
+                          border: 'none',
+                          color: 'white',
+                          padding: '0.8rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🔍
+                      </button>
+                    </form>
+                  )}
+                </div>
+
+                {/* Botão Dark Mode */}
+                <button 
+                  onClick={() => setDarkMode(!darkMode)}
+                  style={{
+                    background: 'transparent',
+                    border: '2px solid #FFA726',
+                    color: '#FFA726',
+                    padding: '0.5rem',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.3s ease'
+                  }}
+                  title={darkMode ? 'Modo claro' : 'Modo escuro'}
+                >
+                  {darkMode ? '☀️' : '🌙'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+    );
+  };
+
+  // Componente PostDetail com Comentários
+  const PostDetail = ({ post, onClose }) => {
+    if (!post) return null;
+
+    const contentParagraphs = post.fullContent ? post.fullContent.split('\n\n') : [];
+    const postComments = comments[post.id] || [];
+
+    const handleAddComment = (e) => {
+      e.preventDefault();
+      if (!newComment.name || !newComment.text) {
+        alert('Preencha pelo menos nome e comentário!');
+        return;
+      }
+
+      const comment = {
+        id: Date.now(),
+        ...newComment,
+        date: new Date().toISOString(),
+        approved: false // Comentários aguardando moderação
+      };
+
+      const updatedComments = {
+        ...comments,
+        [post.id]: [...postComments, comment]
+      };
+
+      setComments(updatedComments);
+      localStorage.setItem('minha-critica-comments', JSON.stringify(updatedComments));
+      setNewComment({ name: '', email: '', text: '' });
+      alert('Comentário enviado para moderação!');
+    };
+
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0,0,0,0.9)',
+        zIndex: 2000,
+        overflowY: 'auto',
+        padding: '2rem 1rem'
+      }}>
+        <div style={{
+          maxWidth: '800px',
+          margin: '0 auto',
+          background: darkMode ? '#1a1a2e' : 'white',
+          borderRadius: '20px',
+          overflow: 'hidden',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+          position: 'relative'
+        }}>
+          {/* Botão Fechar */}
+          <button 
+            onClick={onClose}
+            style={{
+              position: 'absolute',
+              top: '1rem',
+              right: '1rem',
+              background: '#D32F2F',
+              color: 'white',
+              border: 'none',
+              borderRadius: '50%',
+              width: '3rem',
+              height: '3rem',
+              cursor: 'pointer',
+              zIndex: 10,
+              fontSize: '1.2rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ✕
+          </button>
+
+          {/* Imagem do Post */}
+          <div style={{ position: 'relative', paddingTop: '50%', overflow: 'hidden' }}>
+            <img 
+              src={post.image || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800'} 
+              alt={post.title}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover'
+              }}
+            />
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
+              padding: '2rem',
+              color: 'white'
+            }}>
+              <div style={{
+                background: '#D32F2F',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: '20px',
+                fontSize: '0.9rem',
+                fontWeight: '700',
+                display: 'inline-block',
+                marginBottom: '1rem'
+              }}>
+                {post.type}
+              </div>
+              <h1 style={{
+                fontSize: '2.5rem',
+                fontWeight: '900',
+                marginBottom: '0.5rem',
+                lineHeight: '1.2'
+              }}>
+                {post.title}
+              </h1>
+              <div style={{
+                display: 'flex',
+                gap: '1rem',
+                alignItems: 'center',
+                flexWrap: 'wrap'
+              }}>
+                {post.rating && (
+                  <div style={{
+                    background: '#FFD700',
+                    color: '#1A1A2E',
+                    padding: '0.4rem 1rem',
+                    borderRadius: '20px',
+                    fontSize: '1rem',
+                    fontWeight: '800',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.3rem'
+                  }}>
+                    ⭐ {post.rating}/5
+                  </div>
+                )}
+                <span style={{ opacity: 0.9 }}>📅 {new Date(post.date).toLocaleDateString('pt-BR')}</span>
+                {post.readTime && <span style={{ opacity: 0.9 }}>⏱️ {post.readTime}</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* Conteúdo do Post */}
+          <div style={{ padding: '3rem' }}>
+            {/* Resumo */}
+            <p style={{
+              fontSize: '1.2rem',
+              color: darkMode ? '#cccccc' : '#666666',
+              lineHeight: '1.6',
+              marginBottom: '2rem',
+              fontWeight: '500'
+            }}>
+              {post.excerpt}
+            </p>
+
+            {/* Pontos Positivos e Negativos */}
+            {(post.highlights?.length > 0 || post.lowlights?.length > 0) && (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '2rem',
+                marginBottom: '3rem'
+              }}>
+                {post.highlights?.length > 0 && (
+                  <div>
+                    <h3 style={{
+                      color: '#4DB6AC',
+                      fontSize: '1.3rem',
+                      fontWeight: '700',
+                      marginBottom: '1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      ✅ Pontos Positivos
+                    </h3>
+                    <ul style={{
+                      color: darkMode ? '#cccccc' : '#666666',
+                      lineHeight: '1.8',
+                      paddingLeft: '1.5rem'
+                    }}>
+                      {post.highlights.map((highlight, index) => (
+                        <li key={index}>{highlight}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {post.lowlights?.length > 0 && (
+                  <div>
+                    <h3 style={{
+                      color: '#FFA726',
+                      fontSize: '1.3rem',
+                      fontWeight: '700',
+                      marginBottom: '1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      ⚠️ Pontos Negativos
+                    </h3>
+                    <ul style={{
+                      color: darkMode ? '#cccccc' : '#666666',
+                      lineHeight: '1.8',
+                      paddingLeft: '1.5rem'
+                    }}>
+                      {post.lowlights.map((lowlight, index) => (
+                        <li key={index}>{lowlight}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Conteúdo Completo */}
+            {contentParagraphs.length > 0 && (
+              <div style={{
+                color: darkMode ? 'white' : '#333333',
+                lineHeight: '1.8',
+                fontSize: '1.1rem'
+              }}>
+                {contentParagraphs.map((paragraph, index) => (
+                  <p key={index} style={{ marginBottom: '1.5rem' }}>
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {/* Seção de Comentários */}
+            <div style={{
+              marginTop: '4rem',
+              paddingTop: '2rem',
+              borderTop: `2px solid ${darkMode ? '#2d2d44' : '#FFF8DC'}`
+            }}>
+              <h3 style={{
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                color: darkMode ? 'white' : '#1A1A2E',
+                marginBottom: '2rem'
+              }}>
+                💬 Comentários ({postComments.length})
+              </h3>
+
+              {/* Formulário de Comentário */}
+              <form onSubmit={handleAddComment} style={{
+                background: darkMode ? '#2d2d44' : '#FFF8DC',
+                padding: '2rem',
+                borderRadius: '15px',
+                marginBottom: '2rem'
+              }}>
+                <h4 style={{
+                  color: darkMode ? 'white' : '#1A1A2E',
+                  marginBottom: '1rem'
+                }}>
+                  Deixe seu comentário
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <input
+                    type="text"
+                    placeholder="Seu nome *"
+                    value={newComment.name}
+                    onChange={e => setNewComment({...newComment, name: e.target.value})}
+                    style={{
+                      width: '100%',
+                      padding: '0.8rem',
+                      border: `1px solid ${darkMode ? '#444' : '#ddd'}`,
+                      borderRadius: '8px',
+                      background: darkMode ? '#1a1a2e' : 'white',
+                      color: darkMode ? 'white' : '#333'
+                    }}
+                  />
+                  <input
+                    type="email"
+                    placeholder="Seu email"
+                    value={newComment.email}
+                    onChange={e => setNewComment({...newComment, email: e.target.value})}
+                    style={{
+                      width: '100%',
+                      padding: '0.8rem',
+                      border: `1px solid ${darkMode ? '#444' : '#ddd'}`,
+                      borderRadius: '8px',
+                      background: darkMode ? '#1a1a2e' : 'white',
+                      color: darkMode ? 'white' : '#333'
+                    }}
+                  />
+                </div>
+                <textarea
+                  placeholder="Seu comentário *"
+                  rows="4"
+                  value={newComment.text}
+                  onChange={e => setNewComment({...newComment, text: e.target.value})}
+                  style={{
+                    width: '100%',
+                    padding: '0.8rem',
+                    border: `1px solid ${darkMode ? '#444' : '#ddd'}`,
+                    borderRadius: '8px',
+                    background: darkMode ? '#1a1a2e' : 'white',
+                    color: darkMode ? 'white' : '#333',
+                    marginBottom: '1rem',
+                    resize: 'vertical'
+                  }}
+                />
+                <button
+                  type="submit"
+                  style={{
+                    background: '#D32F2F',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.8rem 2rem',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                >
+                  Enviar Comentário
+                </button>
+              </form>
+
+              {/* Lista de Comentários */}
+              {postComments.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {postComments.map(comment => (
+                    <div key={comment.id} style={{
+                      background: darkMode ? '#2d2d44' : '#FFF8DC',
+                      padding: '1.5rem',
+                      borderRadius: '10px',
+                      borderLeft: `4px solid ${comment.approved ? '#4DB6AC' : '#FFA726'}`
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
+                        <strong style={{ color: darkMode ? 'white' : '#1A1A2E' }}>
+                          {comment.name}
+                        </strong>
+                        <small style={{ color: darkMode ? '#999' : '#666' }}>
+                          {new Date(comment.date).toLocaleDateString('pt-BR')}
+                          {!comment.approved && ' ⏳ (Aguardando moderação)'}
+                        </small>
+                      </div>
+                      <p style={{ 
+                        color: darkMode ? '#cccccc' : '#666666',
+                        lineHeight: '1.6',
+                        margin: 0
+                      }}>
+                        {comment.text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ 
+                  color: darkMode ? '#999' : '#666', 
+                  textAlign: 'center', 
+                  padding: '2rem',
+                  fontStyle: 'italic'
+                }}>
+                  Seja o primeiro a comentar!
+                </p>
+              )}
+            </div>
+
+            {/* Rodapé do Post */}
+            <div style={{
+              marginTop: '3rem',
+              paddingTop: '2rem',
+              borderTop: `2px solid ${darkMode ? '#2d2d44' : '#FFF8DC'}`,
+              textAlign: 'center',
+              color: darkMode ? '#999999' : '#888888'
+            }}>
+              <p>🎬 Obrigado por ler esta crítica! 🎬</p>
+            </div>
+          </div>
+        </div>
       </div>
     );
-  }
+  };
 
-  // LOADING
+  // Componente Newsletter
+  const NewsletterPopup = () => {
+    const handleSubscribe = (e) => {
+      e.preventDefault();
+      if (!newsletterEmail) {
+        alert('Por favor, digite seu email!');
+        return;
+      }
+
+      const subscribers = loadNewsletterSubscribers();
+      const updatedSubscribers = [...subscribers, {
+        email: newsletterEmail,
+        date: new Date().toISOString(),
+        active: true
+      }];
+
+      localStorage.setItem('newsletter-subscribers', JSON.stringify(updatedSubscribers));
+      localStorage.setItem('newsletter-subscribed', 'true');
+      
+      setNewsletterEmail('');
+      setShowNewsletter(false);
+      alert('🎉 Obrigado por se inscrever! Você receberá nossas novidades em breve.');
+    };
+
+    if (!showNewsletter) return null;
+
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0,0,0,0.8)',
+        zIndex: 3000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem'
+      }}>
+        <div style={{
+          background: darkMode ? '#1a1a2e' : 'white',
+          padding: '3rem',
+          borderRadius: '20px',
+          maxWidth: '500px',
+          width: '100%',
+          textAlign: 'center',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+          position: 'relative'
+        }}>
+          <button 
+            onClick={() => setShowNewsletter(false)}
+            style={{
+              position: 'absolute',
+              top: '1rem',
+              right: '1rem',
+              background: 'transparent',
+              border: 'none',
+              fontSize: '1.5rem',
+              cursor: 'pointer',
+              color: darkMode ? '#999' : '#666'
+            }}
+          >
+            ✕
+          </button>
+
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📧</div>
+          <h2 style={{
+            fontSize: '1.8rem',
+            fontWeight: '900',
+            color: darkMode ? 'white' : '#1A1A2E',
+            marginBottom: '1rem'
+          }}>
+            Fique por dentro!
+          </h2>
+          <p style={{
+            color: darkMode ? '#cccccc' : '#666666',
+            marginBottom: '2rem',
+            lineHeight: '1.6'
+          }}>
+            Receba as melhores críticas, novidades e dicas de séries e filmes diretamente no seu email.
+          </p>
+
+          <form onSubmit={handleSubscribe} style={{ marginBottom: '1.5rem' }}>
+            <input
+              type="email"
+              placeholder="Seu melhor email"
+              value={newsletterEmail}
+              onChange={e => setNewsletterEmail(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '1rem',
+                border: `2px solid ${darkMode ? '#444' : '#ddd'}`,
+                borderRadius: '10px',
+                fontSize: '1rem',
+                marginBottom: '1rem',
+                background: darkMode ? '#2d2d44' : 'white',
+                color: darkMode ? 'white' : '#333'
+              }}
+            />
+            <button
+              type="submit"
+              style={{
+                width: '100%',
+                background: '#D32F2F',
+                color: 'white',
+                border: 'none',
+                padding: '1rem',
+                borderRadius: '10px',
+                fontSize: '1.1rem',
+                fontWeight: '700',
+                cursor: 'pointer'
+              }}
+            >
+              Quero Receber Novidades!
+            </button>
+          </form>
+
+          <p style={{
+            fontSize: '0.8rem',
+            color: darkMode ? '#999' : '#666'
+          }}>
+            📝 Não spam, apenas conteúdo de qualidade. Pode cancelar quando quiser.
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  // Componente SEO Head
+  const SEOHead = () => {
+    const currentPost = selectedPost || (posts.length > 0 ? posts[0] : null);
+    
+    const metaTags = {
+      title: currentPost 
+        ? `${currentPost.title} - Minha Crítica Não Especializada`
+        : 'Minha Crítica Não Especializada - Opiniões Sinceras sobre Cinema e Séries',
+      
+      description: currentPost 
+        ? currentPost.excerpt
+        : 'Opiniões sinceras sobre cinema e séries, sem frescura. Críticas, análises e notícias do mundo do entretenimento.',
+      
+      keywords: currentPost
+        ? `crítica, ${currentPost.type}, ${currentPost.category}, filme, série, análise`
+        : 'crítica, cinema, séries, filmes, análise, entretenimento, opinião',
+      
+      url: window.location.href,
+      image: currentPost?.image || '/images/logo-minha-critica.png'
+    };
+
+    // Esta função seria usada em um app real para atualizar as meta tags
+    // Por enquanto, vamos apenas retornar um div invisível com as informações
+    return (
+      <div style={{ display: 'none' }}>
+        {/* Meta tags que seriam injetadas no head em uma aplicação real */}
+        <title>{metaTags.title}</title>
+        <meta name="description" content={metaTags.description} />
+        <meta name="keywords" content={metaTags.keywords} />
+        <meta property="og:title" content={metaTags.title} />
+        <meta property="og:description" content={metaTags.description} />
+        <meta property="og:image" content={metaTags.image} />
+        <meta property="og:url" content={metaTags.url} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={metaTags.title} />
+        <meta name="twitter:description" content={metaTags.description} />
+        <meta name="twitter:image" content={metaTags.image} />
+        
+        {/* Schema.org markup for Google */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Blog",
+            "name": "Minha Crítica Não Especializada",
+            "description": metaTags.description,
+            "url": metaTags.url,
+            "publisher": {
+              "@type": "Organization",
+              "name": "Minha Crítica Não Especializada",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "/images/logo-minha-critica.png"
+              }
+            }
+          })}
+        </script>
+      </div>
+    );
+  };
+
+  // Loading State
   if (loading) {
     return (
       <div style={{ 
         minHeight: '100vh', 
-        background: colors.cream, 
+        background: darkMode ? '#0a0a1a' : '#FFF8DC',
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center', 
         flexDirection: 'column',
-        fontFamily: "'Poppins', sans-serif" 
+        fontFamily: "'Poppins', sans-serif"
       }}>
-        <div style={{ fontSize: '4rem', marginBottom: '1rem', animation: 'spin 1s linear infinite' }}>🎬</div>
-        <h2 style={{ color: colors.dark, fontSize: '1.5rem' }}>Carregando posts...</h2>
-        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+        <div style={{ 
+          fontSize: '4rem', 
+          marginBottom: '1rem', 
+          animation: 'spin 1s linear infinite' 
+        }}>
+          🎬
+        </div>
+        <h2 style={{ color: darkMode ? 'white' : '#1A1A2E' }}>
+          {error ? 'Erro ao carregar' : 'Carregando seus posts...'}
+        </h2>
+        {error && (
+          <p style={{ color: '#FFA726', marginTop: '1rem', textAlign: 'center' }}>
+            {error}
+          </p>
+        )}
+        <style>{`
+          @keyframes spin { 
+            from { transform: rotate(0deg); } 
+            to { transform: rotate(360deg); } 
+          }
+        `}</style>
       </div>
     );
   }
 
-  // PÁGINA PRINCIPAL
-  return (
+  // PAINEL ADMIN
+  if (showAdmin) {
+    return <AdminPanel />;
+  }
+
+  // Página de Contato
+  const ContactPage = () => (
     <div style={{ 
-      minHeight: '100vh', 
-      background: colors.cream, 
-      fontFamily: "'Poppins', sans-serif" 
+      background: darkMode ? '#1a1a2e' : 'white', 
+      padding: '3rem', 
+      borderRadius: '20px', 
+      boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
+      textAlign: 'center'
     }}>
-      <Header 
-        currentPage={currentPage} 
-        setCurrentPage={setCurrentPage} 
-        onLogoDoubleClick={() => setShowAdmin(true)} 
-      />
+      <h2 style={{ 
+        fontSize: '2.5rem', 
+        fontWeight: '900', 
+        color: darkMode ? 'white' : '#1A1A2E',
+        marginBottom: '1rem'
+      }}>
+        📞 Contato
+      </h2>
+      <p style={{ 
+        fontSize: '1.2rem', 
+        color: darkMode ? '#cccccc' : '#666666',
+        marginBottom: '2rem'
+      }}>
+        Entre em contato conosco para sugestões, críticas ou parcerias!
+      </p>
       
-      <main style={{ padding: '3rem 2rem' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+        gap: '2rem',
+        marginTop: '3rem'
+      }}>
+        <div style={{
+          background: darkMode ? '#2d2d44' : '#FFF8DC',
+          padding: '2rem',
+          borderRadius: '15px',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📧</div>
+          <h3 style={{ color: darkMode ? 'white' : '#1A1A2E', marginBottom: '0.5rem' }}>Email</h3>
+          <p style={{ color: darkMode ? '#cccccc' : '#666666' }}>contato@minhacritica.com</p>
+        </div>
+        
+        <div style={{
+          background: darkMode ? '#2d2d44' : '#FFF8DC',
+          padding: '2rem',
+          borderRadius: '15px',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📱</div>
+          <h3 style={{ color: darkMode ? 'white' : '#1A1A2E', marginBottom: '0.5rem' }}>Instagram</h3>
+          <p style={{ color: darkMode ? '#cccccc' : '#666666', marginBottom: '1rem' }}>
+            @minhacriticanaoespecializada
+          </p>
+          <a 
+            href="https://www.instagram.com/minhacriticanaoespecializada/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: 'linear-gradient(45deg, #E1306C, #F77737)',
+              color: 'white',
+              padding: '0.8rem 1.5rem',
+              borderRadius: '25px',
+              textDecoration: 'none',
+              fontWeight: '600',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 5px 15px rgba(225, 48, 108, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = 'none';
+            }}
+          >
+            <span>📸</span>
+            Seguir no Instagram
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Footer com Newsletter
+  const Footer = () => {
+    const handleFooterSubscribe = (e) => {
+      e.preventDefault();
+      if (!newsletterEmail) {
+        alert('Por favor, digite seu email!');
+        return;
+      }
+
+      const subscribers = loadNewsletterSubscribers();
+      const updatedSubscribers = [...subscribers, {
+        email: newsletterEmail,
+        date: new Date().toISOString(),
+        active: true
+      }];
+
+      localStorage.setItem('newsletter-subscribers', JSON.stringify(updatedSubscribers));
+      setNewsletterEmail('');
+      alert('🎉 Obrigado por se inscrever!');
+    };
+
+    return (
+      <footer style={{
+        background: '#1A1A2E',
+        color: '#FFF8DC',
+        padding: '3rem 1rem',
+        marginTop: '4rem'
+      }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          {/* Banner apenas na home */}
-          {currentPage === 'home' && <Banner />}
-          
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+            gap: '3rem',
+            marginBottom: '3rem'
+          }}>
+            {/* Logo e Descrição */}
+            <div>
+              <img 
+                src="/images/logo-minha-critica.png" 
+                alt="Minha Crítica Não Especializada" 
+                style={{ 
+                  height: '80px', 
+                  width: 'auto', 
+                  marginBottom: '1.5rem',
+                  filter: 'drop-shadow(0 4px 12px rgba(255,167,38,0.4))'
+                }} 
+              />
+              <p style={{ marginBottom: '1rem', color: '#4DB6AC', fontSize: '1.1rem' }}>
+                Opiniões sinceras sobre cinema e séries, sem frescura.
+              </p>
+            </div>
+
+            {/* Newsletter no Footer */}
+            <div>
+              <h3 style={{ color: '#FFA726', marginBottom: '1rem', fontSize: '1.2rem' }}>
+                📧 Newsletter
+              </h3>
+              <p style={{ color: '#FFF8DC', marginBottom: '1rem', fontSize: '0.9rem' }}>
+                Receba as melhores críticas e novidades no seu email.
+              </p>
+              <form onSubmit={handleFooterSubscribe} style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="email"
+                  placeholder="Seu email"
+                  value={newsletterEmail}
+                  onChange={e => setNewsletterEmail(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '0.8rem',
+                    border: 'none',
+                    borderRadius: '5px',
+                    fontSize: '0.9rem'
+                  }}
+                />
+                <button
+                  type="submit"
+                  style={{
+                    background: '#D32F2F',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.8rem 1.5rem',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                >
+                  Inscrever
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* Instagram e Copyright */}
           <div style={{ 
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center', 
-            marginBottom: '2rem', 
-            flexWrap: 'wrap', 
-            gap: '1rem' 
+            flexWrap: 'wrap',
+            gap: '1rem',
+            paddingTop: '2rem',
+            borderTop: '1px solid rgba(255,255,255,0.1)'
           }}>
-            <h2 style={{ 
-              fontSize: '2.5rem', 
-              fontWeight: '900', 
-              color: colors.dark, 
-              textTransform: 'capitalize' 
-            }}>
-              {currentPage === 'home' ? 'Últimas Publicações' : currentPage}
-            </h2>
-            <span style={{ 
-              background: error ? colors.secondary : colors.accent, 
-              color: 'white', 
-              padding: '0.5rem 1rem', 
-              borderRadius: '20px', 
-              fontSize: '0.9rem', 
-              fontWeight: '700', 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.5rem' 
-            }}>
-              {error ? '📦 localStorage (Backup)' : '🗄️ MySQL Conectado'} • {filteredPosts.length} posts
-            </span>
+            <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>
+              © 2024 Minha Crítica Não Especializada.
+            </p>
+            
+            <a 
+              href="https://www.instagram.com/minhacriticanaoespecializada/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                background: 'linear-gradient(45deg, #E1306C, #F77737)',
+                color: 'white',
+                padding: '0.6rem 1.2rem',
+                borderRadius: '20px',
+                textDecoration: 'none',
+                fontWeight: '600',
+                fontSize: '0.9rem'
+              }}
+            >
+              <span>📸</span>
+              Siga nosso Instagram
+            </a>
+          </div>
+        </div>
+      </footer>
+    );
+  };
+
+  return (
+    <div style={{ 
+      minHeight: '100vh', 
+      background: darkMode ? '#0a0a1a' : '#FFF8DC',
+      fontFamily: "'Poppins', sans-serif"
+    }}>
+      {/* SEO Head */}
+      <SEOHead />
+      
+      <Header />
+      
+      <main style={{ padding: '2rem 1rem' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          
+          {/* Banner de Slides */}
+          <SlideshowBanner />
+          
+          {/* Cabeçalho da Página */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            marginBottom: '2rem',
+            flexWrap: 'wrap',
+            gap: '1rem'
+          }}>
+            <div>
+              <h2 style={{ 
+                fontSize: '2.5rem', 
+                fontWeight: '900', 
+                color: darkMode ? 'white' : '#1A1A2E'
+              }}>
+                {searchTerm ? (
+                  <>🔍 Resultados para: "{searchTerm}"</>
+                ) : currentPage === 'home' ? '🎬 Todos os Posts' : 
+                  currentPage === 'críticas' ? '🎥 Todas as Críticas' :
+                  currentPage === 'séries' ? '📺 Todas as Séries' :
+                  currentPage === 'notícias' ? '📰 Todas as Notícias' :
+                  currentPage === 'contato' ? '📞 Contato' :
+                  currentPage}
+              </h2>
+              
+              {searchTerm && (
+                <button 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setCurrentPage('home');
+                  }}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid #D32F2F',
+                    color: '#D32F2F',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '20px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    marginTop: '0.5rem'
+                  }}
+                >
+                  Limpar busca
+                </button>
+              )}
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
+              <span style={{ 
+                background: error ? '#FFA726' : '#4DB6AC', 
+                color: 'white', 
+                padding: '0.5rem 1rem', 
+                borderRadius: '20px', 
+                fontSize: '0.9rem', 
+                fontWeight: '700'
+              }}>
+                {error ? '📦 Modo Offline' : '🗄️ Conectado'} • {posts.length} posts
+              </span>
+              <button 
+                onClick={() => setShowAdmin(true)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #4DB6AC',
+                  color: '#4DB6AC',
+                  padding: '0.4rem 0.8rem',
+                  borderRadius: '15px',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: '600'
+                }}
+              >
+                ➕ Criar Post
+              </button>
+            </div>
           </div>
 
-          {filteredPosts.length === 0 ? (
+          {/* Mensagem de status */}
+          {error && (
+            <div style={{
+              background: '#FFA726',
+              color: 'white',
+              padding: '1rem',
+              borderRadius: '10px',
+              marginBottom: '2rem',
+              textAlign: 'center'
+            }}>
+              <strong>⚠️ Modo Offline:</strong> {error}
+              <button 
+                onClick={loadPosts}
+                style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  border: '1px solid white',
+                  color: 'white',
+                  padding: '0.4rem 1rem',
+                  borderRadius: '15px',
+                  cursor: 'pointer',
+                  marginLeft: '1rem',
+                  fontSize: '0.8rem'
+                }}
+              >
+                Tentar Novamente
+              </button>
+            </div>
+          )}
+
+          {/* Página de Contato */}
+          {currentPage === 'contato' && <ContactPage />}
+
+          {/* Grid de Posts (não mostra na página de contato) */}
+          {currentPage !== 'contato' && (posts.length === 0 ? (
             <div style={{ 
-              background: 'white', 
+              background: darkMode ? '#1a1a2e' : 'white', 
               padding: '3rem', 
               borderRadius: '20px', 
               textAlign: 'center', 
-              color: '#999', 
-              boxShadow: '0 4px 15px rgba(0,0,0,0.1)' 
+              color: darkMode ? '#999' : '#666', 
+              boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
             }}>
-              <p style={{ fontSize: '1.3rem', marginBottom: '0.5rem' }}>📭 Nenhum post encontrado</p>
-              <p style={{ fontSize: '1rem' }}>
+              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📝</div>
+              <h3 style={{ 
+                fontSize: '1.5rem', 
+                fontWeight: '700', 
+                color: darkMode ? 'white' : '#1A1A2E',
+                marginBottom: '0.5rem'
+              }}>
+                Nenhum post encontrado
+              </h3>
+              <p style={{ fontSize: '1rem', marginBottom: '2rem' }}>
                 {error 
-                  ? 'Verifique se o backend está rodando em http://localhost:3001' 
-                  : 'Não há posts nesta categoria ainda.'
+                  ? 'Não foi possível carregar os posts do servidor.'
+                  : 'Você ainda não tem posts cadastrados.'
                 }
               </p>
-              {error && (
-                <button onClick={loadPosts} style={{ 
-                  marginTop: '1.5rem', 
-                  background: colors.primary, 
-                  color: 'white', 
-                  border: 'none', 
-                  padding: '0.8rem 1.5rem', 
-                  borderRadius: '10px', 
-                  fontSize: '1rem', 
-                  fontWeight: '700', 
-                  cursor: 'pointer' 
-                }}>
-                  🔄 Tentar Reconectar
-                </button>
-              )}
+              <button 
+                onClick={() => setShowAdmin(true)}
+                style={{
+                  background: '#D32F2F',
+                  color: 'white',
+                  border: 'none',
+                  padding: '1rem 2rem',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: '700'
+                }}
+              >
+                ➕ Criar Primeiro Post
+              </button>
             </div>
           ) : (
             <div style={{ 
               display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', 
               gap: '2rem' 
             }}>
-              {filteredPosts.map(post => (
-                <PostCard 
-                  key={post.id} 
-                  post={post} 
-                  onClick={() => setSelectedPost(post)} 
-                />
-              ))}
+              {posts
+                .filter(post => {
+                  if (searchTerm) {
+                    const term = searchTerm.toLowerCase();
+                    return (
+                      post.title?.toLowerCase().includes(term) ||
+                      post.excerpt?.toLowerCase().includes(term) ||
+                      post.type?.toLowerCase().includes(term) ||
+                      post.category?.toLowerCase().includes(term)
+                    );
+                  }
+                  return currentPage === 'home' ? true : post.category === currentPage;
+                })
+                .map(post => (
+                  <div 
+                    key={post.id}
+                    onClick={() => setSelectedPost(post)}
+                    style={{
+                      background: darkMode ? '#1a1a2e' : 'white',
+                      borderRadius: '15px',
+                      overflow: 'hidden',
+                      boxShadow: '0 8px 25px rgba(0,0,0,0.12)',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-8px)';
+                      e.currentTarget.style.boxShadow = '0 15px 40px rgba(211, 47, 47, 0.25)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.12)';
+                    }}
+                  >
+                    <div style={{ position: 'relative', paddingTop: '60%', overflow: 'hidden' }}>
+                      <img 
+                        src={post.image || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400'} 
+                        alt={post.title}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                      <div style={{
+                        position: 'absolute',
+                        top: '1rem',
+                        left: '1rem',
+                        background: '#D32F2F',
+                        color: 'white',
+                        padding: '0.4rem 1rem',
+                        borderRadius: '20px',
+                        fontSize: '0.8rem',
+                        fontWeight: '700'
+                      }}>
+                        {post.type}
+                      </div>
+                      {post.rating && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '1rem',
+                          right: '1rem',
+                          background: '#FFD700',
+                          color: '#1A1A2E',
+                          padding: '0.4rem 0.8rem',
+                          borderRadius: '20px',
+                          fontSize: '0.85rem',
+                          fontWeight: '800',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.3rem'
+                        }}>
+                          ⭐ {post.rating}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      <h3 style={{ 
+                        fontSize: '1.3rem', 
+                        fontWeight: '800', 
+                        color: darkMode ? 'white' : '#1A1A2E', 
+                        marginBottom: '0.8rem',
+                        lineHeight: '1.3'
+                      }}>
+                        {post.title}
+                      </h3>
+                      <p style={{ 
+                        color: darkMode ? '#cccccc' : '#666666', 
+                        lineHeight: '1.6', 
+                        marginBottom: '1rem',
+                        flex: 1
+                      }}>
+                        {post.excerpt}
+                      </p>
+                      
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        paddingTop: '1rem', 
+                        borderTop: `1px solid ${darkMode ? '#2d2d44' : '#FFF8DC'}`,
+                        fontSize: '0.85rem',
+                        color: darkMode ? '#999999' : '#888888'
+                      }}>
+                        <span>📅 {new Date(post.date).toLocaleDateString('pt-BR')}</span>
+                        {post.readTime && <span>⏱️ {post.readTime}</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
             </div>
-          )}
+          ))}
         </div>
       </main>
       
+      {/* Footer com Newsletter */}
       <Footer />
+
+      {/* Modal de Leitura Completa */}
+      {selectedPost && (
+        <PostDetail 
+          post={selectedPost} 
+          onClose={() => setSelectedPost(null)} 
+        />
+      )}
+
+      {/* Newsletter Popup */}
+      <NewsletterPopup />
     </div>
   );
 }

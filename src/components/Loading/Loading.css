@@ -1,0 +1,30 @@
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    padding: 2rem;
+  }
+  
+  .loading-spinner {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: spin 1.5s linear infinite;
+  }
+  
+  .loading-text {
+    color: var(--dark);
+    font-size: 1.2rem;
+    font-weight: 500;
+  }
+  
+  @media (max-width: 768px) {
+    .loading-spinner {
+      font-size: 3rem;
+    }
+    
+    .loading-text {
+      font-size: 1rem;
+    }
+  }

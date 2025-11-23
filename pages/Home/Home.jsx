@@ -1,7 +1,7 @@
 import React from 'react';
 import Banner from '../../components/Banner/Banner';
 import PostCard from '../../components/PostCard/PostCard';
-import { colors } from '../../styles/colors';
+import { colors } from '../../src/styles/colors';
 import './Home.css';
 
 const Home = ({ 

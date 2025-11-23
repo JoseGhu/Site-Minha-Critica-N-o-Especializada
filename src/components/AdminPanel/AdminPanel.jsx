@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, Trash2, Save, X, Lock, LogOut } from 'lucide-react';
-import { api } from '../../services/api';
-import { colors } from '../../src/styles/colors';
+import { Edit, Trash2, Save, X, Lock, LogOut, Plus, Eye } from 'lucide-react';
+import api from '../../services/api';
 import './AdminPanel.css';
 
-const AdminPanel = ({ onClose, onPostChange }) => {
+const AdminPanel = ({ onClose, onPostChange, darkMode }) => {
   const [token, setToken] = useState(localStorage.getItem('admin_token') || '');
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('admin_token'));
   const [username, setUsername] = useState('');
@@ -34,7 +33,10 @@ const AdminPanel = ({ onClose, onPostChange }) => {
       const data = await api.getPosts(); 
       setPosts(data); 
     } catch (e) { 
-      console.error(e); 
+      console.error('Erro ao carregar posts:', e);
+      // Fallback para dados locais
+      const localPosts = localStorage.getItem('minha-critica-posts');
+      if (localPosts) setPosts(JSON.parse(localPosts));
     }
   };
 
@@ -74,6 +76,7 @@ const AdminPanel = ({ onClose, onPostChange }) => {
         highlights: form.highlights ? form.highlights.split('\n').filter(h => h.trim()) : [],
         lowlights: form.lowlights ? form.lowlights.split('\n').filter(l => l.trim()) : []
       };
+      
       if (editing) { 
         await api.updatePost(token, editing.id, postData); 
         alert('✅ Post atualizado!'); 
@@ -81,6 +84,7 @@ const AdminPanel = ({ onClose, onPostChange }) => {
         await api.createPost(token, postData); 
         alert('✅ Post criado!'); 
       }
+      
       setForm({ 
         title: '', 
         category: 'críticas', 
@@ -120,7 +124,7 @@ const AdminPanel = ({ onClose, onPostChange }) => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Deletar este post?')) return;
+    if (!window.confirm('Tem certeza que deseja deletar este post?')) return;
     try { 
       await api.deletePost(token, id); 
       alert('✅ Post deletado!'); 
@@ -134,22 +138,25 @@ const AdminPanel = ({ onClose, onPostChange }) => {
   const inputStyle = { 
     width: '100%', 
     padding: '0.8rem', 
-    border: `2px solid ${colors.cream}`, 
+    border: `2px solid ${darkMode ? '#444' : '#ddd'}`, 
     borderRadius: '8px', 
     fontSize: '1rem', 
-    marginBottom: '1rem' 
+    marginBottom: '1rem',
+    backgroundColor: darkMode ? '#1a1a2e' : 'white',
+    color: darkMode ? 'white' : 'var(--text-dark)'
   };
 
   // TELA DE LOGIN
   if (!isLoggedIn) {
     return (
-      <div className="admin-login-container">
+      <div className={`admin-login-container ${darkMode ? 'dark' : ''}`}>
         <div className="admin-login-form">
           <div className="login-header">
-            <Lock size={48} color={colors.primary} />
+            <Lock size={48} color="#D32F2F" />
             <h1>Painel Admin</h1>
             <p>Minha Crítica Não Especializada</p>
           </div>
+          
           <input 
             type="text" 
             placeholder="Usuário" 
@@ -165,6 +172,7 @@ const AdminPanel = ({ onClose, onPostChange }) => {
             onKeyPress={e => e.key === 'Enter' && handleLogin()} 
             style={inputStyle} 
           />
+          
           <button 
             onClick={handleLogin} 
             disabled={loading} 
@@ -172,12 +180,14 @@ const AdminPanel = ({ onClose, onPostChange }) => {
           >
             {loading ? '⏳ Entrando...' : '🔐 Entrar'}
           </button>
+          
           <button 
             onClick={onClose} 
             className="back-button"
           >
             ← Voltar ao Blog
           </button>
+          
           <p className="login-hint">
             Usuário: admin | Senha: admin123
           </p>
@@ -186,14 +196,14 @@ const AdminPanel = ({ onClose, onPostChange }) => {
     );
   }
 
-  // PAINEL ADMIN
+  // PAINEL ADMIN LOGADO
   return (
-    <div className="admin-panel">
+    <div className={`admin-panel ${darkMode ? 'dark' : ''}`}>
       <header className="admin-header">
-        <h1>🎬 Painel Admin</h1>
+        <h1>🎬 Painel Admin - Minha Crítica</h1>
         <div className="admin-actions">
           <button onClick={onClose} className="admin-button secondary">
-            ← Blog
+            ← Voltar ao Blog
           </button>
           <button onClick={handleLogout} className="admin-button warning">
             <LogOut size={16} />Sair
@@ -204,7 +214,8 @@ const AdminPanel = ({ onClose, onPostChange }) => {
       <main className="admin-main">
         {/* FORMULÁRIO */}
         <div className="admin-form-section">
-          <h2>{editing ? '✏️ Editar Post' : '➕ Novo Post'}</h2>
+          <h2>{editing ? '✏️ Editar Post' : '➕ Criar Novo Post'}</h2>
+          
           <div className="form-grid">
             <input 
               type="text" 
@@ -329,6 +340,7 @@ const AdminPanel = ({ onClose, onPostChange }) => {
         {/* LISTA DE POSTS */}
         <div className="posts-list-section">
           <h2>📋 Posts Cadastrados ({posts.length})</h2>
+          
           {posts.length === 0 ? (
             <p className="no-posts">Nenhum post cadastrado ainda.</p>
           ) : (
@@ -346,17 +358,26 @@ const AdminPanel = ({ onClose, onPostChange }) => {
                     </div>
                     <h3>{post.title}</h3>
                     <p>{post.excerpt?.substring(0, 80)}...</p>
+                    <div className="post-meta">
+                      <span>{new Date(post.date).toLocaleDateString('pt-BR')}</span>
+                      <span className="views">
+                        <Eye size={14} />
+                        {JSON.parse(localStorage.getItem('post-views') || '{}')[post.id] || 0}
+                      </span>
+                    </div>
                   </div>
                   <div className="post-actions">
                     <button 
                       onClick={() => handleEdit(post)} 
                       className="edit-button"
+                      title="Editar post"
                     >
                       <Edit size={18} />
                     </button>
                     <button 
                       onClick={() => handleDelete(post.id)} 
                       className="delete-button"
+                      title="Deletar post"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -371,5 +392,4 @@ const AdminPanel = ({ onClose, onPostChange }) => {
   );
 };
 
-// Exportação padrão CORRETA
 export default AdminPanel;
