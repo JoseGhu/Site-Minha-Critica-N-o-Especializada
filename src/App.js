@@ -444,8 +444,8 @@ function App() {
     );
   };
 
-  // Componente Header
-  const Header = () => {
+// Componente Header
+const Header = () => {
     const handleSearch = (e) => {
       e.preventDefault();
       if (searchTerm.trim()) {
@@ -465,7 +465,7 @@ function App() {
     return (
       <header style={{
         background: 'linear-gradient(135deg, #D32F2F 0%, #1A1A2E 100%)',
-        padding: '1rem 0',
+        padding: '0.5rem 0',
         boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
         position: 'sticky',
         top: 0,
@@ -480,9 +480,15 @@ function App() {
             gap: '1rem' 
           }}>
             
-            {/* LOGO */}
+            {/* LOGO AUMENTADO */}
             <div 
-              style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                marginTop: '-5px',
+                marginBottom: '-5px'
+              }}
               onClick={() => {
                 setCurrentPage('home');
                 setSearchTerm('');
@@ -494,11 +500,11 @@ function App() {
                 src="/images/logo-minha-critica.png" 
                 alt="Minha Crítica Não Especializada" 
                 style={{ 
-                  height: '120px', 
+                  height: '140px', 
                   width: 'auto', 
-                  marginTop: '-10px',
-                  filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.45))', 
-                  transition: 'transform 0.3s ease'
+                  filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))', 
+                  transition: 'transform 0.3s ease',
+                  objectFit: 'contain'
                 }}
                 onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
                 onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
@@ -506,8 +512,17 @@ function App() {
             </div>
 
             {/* Menu e Controles */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-              <nav style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '1.5rem',
+              marginTop: '5px'
+            }}>
+              <nav style={{ 
+                display: 'flex', 
+                gap: '0.8rem', 
+                flexWrap: 'wrap'
+              }}>
                 {menuItems.map(item => (
                   <button 
                     key={item.page}
@@ -519,12 +534,26 @@ function App() {
                       background: currentPage === item.page ? '#FFA726' : 'transparent',
                       color: 'white',
                       border: `2px solid ${currentPage === item.page ? '#FFA726' : 'transparent'}`,
-                      padding: '0.6rem 1rem',
+                      padding: '0.7rem 1.2rem',
                       borderRadius: '25px',
                       cursor: 'pointer',
-                      fontSize: '0.85rem',
+                      fontSize: '1rem', // AUMENTADO de 0.85rem para 1rem
                       fontWeight: '700',
-                      transition: 'all 0.3s ease'
+                      transition: 'all 0.3s ease',
+                      minWidth: '80px',
+                      textAlign: 'center'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (currentPage !== item.page) {
+                        e.target.style.background = 'rgba(255, 167, 38, 0.2)';
+                        e.target.style.borderColor = '#FFA726';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (currentPage !== item.page) {
+                        e.target.style.background = 'transparent';
+                        e.target.style.borderColor = 'transparent';
+                      }
                     }}
                   >
                     {item.name}
@@ -532,7 +561,12 @@ function App() {
                 ))}
               </nav>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.8rem',
+                marginBottom: '5px'
+              }}>
                 {/* Botão Busca */}
                 <div style={{ position: 'relative' }}>
                   <button 
@@ -541,10 +575,11 @@ function App() {
                       background: 'transparent',
                       border: 'none',
                       color: 'white',
-                      padding: '0.5rem',
+                      padding: '0.6rem',
                       borderRadius: '50%',
                       cursor: 'pointer',
-                      transition: 'all 0.3s ease'
+                      transition: 'all 0.3s ease',
+                      fontSize: '1.2rem'
                     }}
                     title="Buscar posts"
                   >
@@ -564,7 +599,7 @@ function App() {
                         borderRadius: '25px',
                         overflow: 'hidden',
                         boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-                        minWidth: '250px'
+                        minWidth: '280px'
                       }}
                     >
                       <input
@@ -574,8 +609,8 @@ function App() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                         style={{
                           border: 'none',
-                          padding: '0.8rem 1rem',
-                          fontSize: '0.9rem',
+                          padding: '0.9rem 1.2rem',
+                          fontSize: '1rem',
                           flex: 1,
                           outline: 'none'
                         }}
@@ -587,8 +622,9 @@ function App() {
                           background: '#D32F2F',
                           border: 'none',
                           color: 'white',
-                          padding: '0.8rem',
-                          cursor: 'pointer'
+                          padding: '0.9rem',
+                          cursor: 'pointer',
+                          fontSize: '1.1rem'
                         }}
                       >
                         🔍
@@ -604,13 +640,14 @@ function App() {
                     background: 'transparent',
                     border: '2px solid #FFA726',
                     color: '#FFA726',
-                    padding: '0.5rem',
+                    padding: '0.6rem',
                     borderRadius: '50%',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.3s ease',
+                    fontSize: '1.2rem'
                   }}
                   title={darkMode ? 'Modo claro' : 'Modo escuro'}
                 >
@@ -1135,59 +1172,215 @@ function App() {
     );
   };
 
-  // Página de Contato
-  const ContactPage = () => (
-    <div style={{ 
-      background: darkMode ? '#1a1a2e' : 'white', 
-      padding: '3rem', 
-      borderRadius: '20px', 
-      boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
-      textAlign: 'center'
+// PÁGINA DE CONTATO
+const ContactPage = () => (
+  <div style={{ 
+    background: darkMode ? '#1a1a2e' : 'white', 
+    padding: '3rem', 
+    borderRadius: '20px', 
+    boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
+    textAlign: 'center'
+  }}>
+    <h2 style={{ 
+      fontSize: '2.5rem', 
+      fontWeight: '900', 
+      color: darkMode ? 'white' : '#1A1A2E',
+      marginBottom: '1rem'
     }}>
-      <h2 style={{ 
-        fontSize: '2.5rem', 
-        fontWeight: '900', 
-        color: darkMode ? 'white' : '#1A1A2E',
-        marginBottom: '1rem'
+      📞 Contato
+    </h2>
+    <p style={{ 
+      fontSize: '1.2rem', 
+      color: darkMode ? '#cccccc' : '#666666',
+      marginBottom: '2rem'
+    }}>
+      Entre em contato conosco para sugestões, críticas ou parcerias!
+    </p>
+    
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+      gap: '2rem',
+      marginTop: '3rem'
+    }}>
+      <div style={{
+        background: darkMode ? '#2d2d44' : '#FFF8DC',
+        padding: '2rem',
+        borderRadius: '15px',
+        textAlign: 'center'
       }}>
-        📞 Contato
-      </h2>
-      <p style={{ 
-        fontSize: '1.2rem', 
-        color: darkMode ? '#cccccc' : '#666666',
-        marginBottom: '2rem'
-      }}>
-        Entre em contato conosco para sugestões, críticas ou parcerias!
-      </p>
+        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📧</div>
+        <h3 style={{ color: darkMode ? 'white' : '#1A1A2E', marginBottom: '0.5rem' }}>Email</h3>
+        <p style={{ color: darkMode ? '#cccccc' : '#666666' }}>contato@minhacritica.com</p>
+      </div>
       
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: '2rem',
-        marginTop: '3rem'
+        background: darkMode ? '#2d2d44' : '#FFF8DC',
+        padding: '2rem',
+        borderRadius: '15px',
+        textAlign: 'center'
       }}>
-        <div style={{
-          background: darkMode ? '#2d2d44' : '#FFF8DC',
-          padding: '2rem',
-          borderRadius: '15px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📧</div>
-          <h3 style={{ color: darkMode ? 'white' : '#1A1A2E', marginBottom: '0.5rem' }}>Email</h3>
-          <p style={{ color: darkMode ? '#cccccc' : '#666666' }}>contato@minhacritica.com</p>
+        {/* ÍCONE DO INSTAGRAM SVG */}
+        <div style={{ marginBottom: '1rem' }}>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" fill="url(#instagramGradient)"/>
+            <defs>
+              <linearGradient id="instagramGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#E1306C"/>
+                <stop offset="50%" stopColor="#F77737"/>
+                <stop offset="100%" stopColor="#FCAF45"/>
+              </linearGradient>
+            </defs>
+          </svg>
         </div>
-        
-        <div style={{
-          background: darkMode ? '#2d2d44' : '#FFF8DC',
-          padding: '2rem',
-          borderRadius: '15px',
-          textAlign: 'center'
+        <h3 style={{ color: darkMode ? 'white' : '#1A1A2E', marginBottom: '0.5rem' }}>Instagram</h3>
+        <p style={{ color: darkMode ? '#cccccc' : '#666666', marginBottom: '1rem' }}>
+          @minhacriticanaoespecializada
+        </p>
+        <a 
+          href="https://www.instagram.com/minhacriticanaoespecializada/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            background: 'linear-gradient(45deg, #E1306C, #F77737)',
+            color: 'white',
+            padding: '0.8rem 1.5rem',
+            borderRadius: '25px',
+            textDecoration: 'none',
+            fontWeight: '600',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = 'translateY(-2px)';
+            e.target.style.boxShadow = '0 5px 15px rgba(225, 48, 108, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = 'none';
+          }}
+        >
+          {/* ÍCONE DO INSTAGRAM SVG PEQUENO */}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" fill="white"/>
+          </svg>
+          Seguir no Instagram
+        </a>
+      </div>
+    </div>
+  </div>
+);
+
+// ====================================================================
+// FOOTER COM NEWSLETTER
+// ====================================================================
+const Footer = () => {
+  const handleFooterSubscribe = (e) => {
+    e.preventDefault();
+    if (!newsletterEmail) {
+      alert('Por favor, digite seu email!');
+      return;
+    }
+
+    const subscribers = loadNewsletterSubscribers();
+    const updatedSubscribers = [...subscribers, {
+      email: newsletterEmail,
+      date: new Date().toISOString(),
+      active: true
+    }];
+
+    localStorage.setItem('newsletter-subscribers', JSON.stringify(updatedSubscribers));
+    setNewsletterEmail('');
+    alert('🎉 Obrigado por se inscrever!');
+  };
+
+  return (
+    <footer style={{
+      background: '#1A1A2E',
+      color: '#FFF8DC',
+      padding: '3rem 1rem',
+      marginTop: '4rem'
+    }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+          gap: '3rem',
+          marginBottom: '3rem'
         }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📱</div>
-          <h3 style={{ color: darkMode ? 'white' : '#1A1A2E', marginBottom: '0.5rem' }}>Instagram</h3>
-          <p style={{ color: darkMode ? '#cccccc' : '#666666', marginBottom: '1rem' }}>
-            @minhacriticanaoespecializada
+          {/* Logo e Descrição */}
+          <div>
+            <img 
+              src="/images/logo-minha-critica.png" 
+              alt="Minha Crítica Não Especializada" 
+              style={{ 
+                height: '80px', 
+                width: 'auto', 
+                marginBottom: '1.5rem',
+                filter: 'drop-shadow(0 4px 12px rgba(255,167,38,0.4))'
+              }} 
+            />
+            <p style={{ marginBottom: '1rem', color: '#4DB6AC', fontSize: '1.1rem' }}>
+              Opiniões sinceras sobre cinema e séries, sem frescura.
+            </p>
+          </div>
+
+          {/* Newsletter no Footer */}
+          <div>
+            <h3 style={{ color: '#FFA726', marginBottom: '1rem', fontSize: '1.2rem' }}>
+              📧 Newsletter
+            </h3>
+            <p style={{ color: '#FFF8DC', marginBottom: '1rem', fontSize: '0.9rem' }}>
+              Receba as melhores críticas e novidades no seu email.
+            </p>
+            <form onSubmit={handleFooterSubscribe} style={{ display: 'flex', gap: '0.5rem' }}>
+              <input
+                type="email"
+                placeholder="Seu email"
+                value={newsletterEmail}
+                onChange={e => setNewsletterEmail(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: '0.8rem',
+                  border: 'none',
+                  borderRadius: '5px',
+                  fontSize: '0.9rem'
+                }}
+              />
+              <button
+                type="submit"
+                style={{
+                  background: '#D32F2F',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.8rem 1.5rem',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
+              >
+                Inscrever
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Instagram e Copyright */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          flexWrap: 'wrap',
+          gap: '1rem',
+          paddingTop: '2rem',
+          borderTop: '1px solid rgba(255,255,255,0.1)'
+        }}>
+          <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>
+            © 2024 Minha Crítica Não Especializada.
           </p>
+          
           <a 
             href="https://www.instagram.com/minhacriticanaoespecializada/" 
             target="_blank" 
@@ -1198,160 +1391,24 @@ function App() {
               gap: '0.5rem',
               background: 'linear-gradient(45deg, #E1306C, #F77737)',
               color: 'white',
-              padding: '0.8rem 1.5rem',
-              borderRadius: '25px',
+              padding: '0.6rem 1.2rem',
+              borderRadius: '20px',
               textDecoration: 'none',
               fontWeight: '600',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 5px 15px rgba(225, 48, 108, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = 'none';
+              fontSize: '0.9rem'
             }}
           >
-            <span>📸</span>
-            Seguir no Instagram
+            {/* ÍCONE DO INSTAGRAM SVG PEQUENO NO FOOTER */}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" fill="white"/>
+            </svg>
+            Siga nosso Instagram
           </a>
         </div>
       </div>
-    </div>
+    </footer>
   );
-
-  // Footer com Newsletter
-  const Footer = () => {
-    const handleFooterSubscribe = (e) => {
-      e.preventDefault();
-      if (!newsletterEmail) {
-        alert('Por favor, digite seu email!');
-        return;
-      }
-
-      const subscribers = loadNewsletterSubscribers();
-      const updatedSubscribers = [...subscribers, {
-        email: newsletterEmail,
-        date: new Date().toISOString(),
-        active: true
-      }];
-
-      localStorage.setItem('newsletter-subscribers', JSON.stringify(updatedSubscribers));
-      setNewsletterEmail('');
-      alert('🎉 Obrigado por se inscrever!');
-    };
-
-    return (
-      <footer style={{
-        background: '#1A1A2E',
-        color: '#FFF8DC',
-        padding: '3rem 1rem',
-        marginTop: '4rem'
-      }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-            gap: '3rem',
-            marginBottom: '3rem'
-          }}>
-            {/* Logo e Descrição */}
-            <div>
-              <img 
-                src="/images/logo-minha-critica.png" 
-                alt="Minha Crítica Não Especializada" 
-                style={{ 
-                  height: '80px', 
-                  width: 'auto', 
-                  marginBottom: '1.5rem',
-                  filter: 'drop-shadow(0 4px 12px rgba(255,167,38,0.4))'
-                }} 
-              />
-              <p style={{ marginBottom: '1rem', color: '#4DB6AC', fontSize: '1.1rem' }}>
-                Opiniões sinceras sobre cinema e séries, sem frescura.
-              </p>
-            </div>
-
-            {/* Newsletter no Footer */}
-            <div>
-              <h3 style={{ color: '#FFA726', marginBottom: '1rem', fontSize: '1.2rem' }}>
-                📧 Newsletter
-              </h3>
-              <p style={{ color: '#FFF8DC', marginBottom: '1rem', fontSize: '0.9rem' }}>
-                Receba as melhores críticas e novidades no seu email.
-              </p>
-              <form onSubmit={handleFooterSubscribe} style={{ display: 'flex', gap: '0.5rem' }}>
-                <input
-                  type="email"
-                  placeholder="Seu email"
-                  value={newsletterEmail}
-                  onChange={e => setNewsletterEmail(e.target.value)}
-                  style={{
-                    flex: 1,
-                    padding: '0.8rem',
-                    border: 'none',
-                    borderRadius: '5px',
-                    fontSize: '0.9rem'
-                  }}
-                />
-                <button
-                  type="submit"
-                  style={{
-                    background: '#D32F2F',
-                    color: 'white',
-                    border: 'none',
-                    padding: '0.8rem 1.5rem',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  Inscrever
-                </button>
-              </form>
-            </div>
-          </div>
-
-          {/* Instagram e Copyright */}
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            flexWrap: 'wrap',
-            gap: '1rem',
-            paddingTop: '2rem',
-            borderTop: '1px solid rgba(255,255,255,0.1)'
-          }}>
-            <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>
-              © 2024 Minha Crítica Não Especializada.
-            </p>
-            
-            <a 
-              href="https://www.instagram.com/minhacriticanaoespecializada/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                background: 'linear-gradient(45deg, #E1306C, #F77737)',
-                color: 'white',
-                padding: '0.6rem 1.2rem',
-                borderRadius: '20px',
-                textDecoration: 'none',
-                fontWeight: '600',
-                fontSize: '0.9rem'
-              }}
-            >
-              <span>📸</span>
-              Siga nosso Instagram
-            </a>
-          </div>
-        </div>
-      </footer>
-    );
-  };
+};
 
   // Sistema de Admin com Gerenciamento de Posts
   const AdminPanel = () => {
