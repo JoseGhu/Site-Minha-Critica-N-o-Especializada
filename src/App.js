@@ -209,22 +209,37 @@ function App() {
     
     const slides = [
       {
-        title: "🎬 Críticas Sem Frescura",
-        description: "Opiniões sinceras sobre os lançamentos do cinema",
-        background: "linear-gradient(135deg, #D32F2F 0%, #1A1A2E 100%)",
-        emoji: "🎥"
+        title: "Críticas Sem Frescura",
+        description: "Opiniões diretas e bem produzidas sobre o que estreia no cinema",
+        background: `
+          linear-gradient(135deg, rgba(15, 15, 25, 0.85) 0%, rgba(78, 15, 25, 0.6) 100%),
+          url("https://images.unsplash.com/photo-1440404653325-ab127d49abc1?auto=format&fit=crop&w=1600&q=90")
+        `,
+        backgroundPosition: "center",
+        backgroundSize: "cover",
+        accentColor: "#FF4757"
       },
       {
-        title: "📺 Séries Imperdíveis",
-        description: "Análises detalhadas das melhores séries",
-        background: "linear-gradient(135deg, #4DB6AC 0%, #1A1A2E 100%)",
-        emoji: "📺"
+        title: "Séries Imperdíveis",
+        description: "Análises sólidas e conteúdo para quem realmente ama maratonar",
+        background: `
+          linear-gradient(135deg, rgba(15, 15, 25, 0.85) 0%, rgba(25, 15, 78, 0.6) 100%),
+          url("https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1600&q=90")
+        `,
+        backgroundPosition: "center",
+        backgroundSize: "cover",
+        accentColor: "#2ED573"
       },
       {
-        title: "📰 Notícias Quentes",
-        description: "Fique por dentro do mundo do entretenimento",
-        background: "linear-gradient(135deg, #FFA726 0%, #1A1A2E 100%)",
-        emoji: "📰"
+        title: "Reviews Exclusivas",
+        description: "Primeiras impressões dos lançamentos mais aguardados",
+        background: `
+          linear-gradient(135deg, rgba(15, 15, 25, 0.85) 0%, rgba(78, 65, 15, 0.6) 100%),
+          url("https://images.unsplash.com/photo-1595769816263-9b910be24d5f?auto=format&fit=crop&w=1600&q=90")
+        `,
+        backgroundPosition: "center",
+        backgroundSize: "cover",
+        accentColor: "#FFA502"
       }
     ];
 
@@ -239,12 +254,13 @@ function App() {
 
     return (
       <section style={{
-        height: '400px',
+        height: '500px',
         position: 'relative',
         overflow: 'hidden',
-        borderRadius: '20px',
+        borderRadius: '24px',
         marginBottom: '3rem',
-        boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
+        boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+        background: '#0F0F19'
       }}>
         {slides.map((slide, index) => (
           <div
@@ -256,34 +272,42 @@ function App() {
               width: '100%',
               height: '100%',
               background: slide.background,
+              backgroundPosition: slide.backgroundPosition,
+              backgroundSize: slide.backgroundSize,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               opacity: index === currentSlide ? 1 : 0,
-              transition: 'opacity 0.8s ease-in-out',
-              padding: '2rem'
+              transition: 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+              padding: '0 4rem'
             }}
           >
             <div style={{ 
               textAlign: 'center', 
               color: 'white',
-              maxWidth: '600px'
+              maxWidth: '800px',
+              zIndex: 2
             }}>
-              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
-                {slide.emoji}
-              </div>
               <h1 style={{
-                fontSize: '3rem',
+                fontSize: '3.5rem',
                 fontWeight: '900',
-                marginBottom: '1rem',
-                textShadow: '0 4px 15px rgba(0,0,0,0.5)'
+                marginBottom: '1.5rem',
+                textShadow: '0 4px 20px rgba(0,0,0,0.7)',
+                background: `linear-gradient(135deg, #FFFFFF 0%, ${slide.accentColor} 100%)`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                lineHeight: '1.1'
               }}>
                 {slide.title}
               </h1>
               <p style={{
-                fontSize: '1.3rem',
-                opacity: 0.9,
-                marginBottom: '2rem'
+                fontSize: '1.4rem',
+                opacity: 0.95,
+                marginBottom: '2.5rem',
+                lineHeight: '1.6',
+                fontWeight: '400',
+                textShadow: '0 2px 8px rgba(0,0,0,0.5)'
               }}>
                 {slide.description}
               </p>
@@ -291,22 +315,27 @@ function App() {
                 onClick={() => setCurrentPage(slide.title.includes('Críticas') ? 'críticas' : 
                            slide.title.includes('Séries') ? 'séries' : 'notícias')}
                 style={{
-                  background: 'rgba(255,255,255,0.2)',
-                  border: '2px solid white',
+                  background: `linear-gradient(135deg, ${slide.accentColor} 0%, ${slide.accentColor}80 100%)`,
+                  border: 'none',
                   color: 'white',
-                  padding: '1rem 2rem',
-                  borderRadius: '25px',
+                  padding: '1.2rem 2.5rem',
+                  borderRadius: '50px',
                   fontSize: '1.1rem',
                   fontWeight: '700',
                   cursor: 'pointer',
                   backdropFilter: 'blur(10px)',
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: `0 8px 30px ${slide.accentColor}40`,
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(255,255,255,0.3)';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = `0 12px 40px ${slide.accentColor}60`;
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(255,255,255,0.2)';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = `0 8px 30px ${slide.accentColor}40`;
                 }}
               >
                 Explorar Agora
@@ -315,31 +344,102 @@ function App() {
           </div>
         ))}
         
-        {/* Indicadores */}
+        {/* Indicadores estilizados */}
         <div style={{
           position: 'absolute',
-          bottom: '2rem',
+          bottom: '2.5rem',
           left: '50%',
           transform: 'translateX(-50%)',
           display: 'flex',
-          gap: '0.5rem'
+          gap: '0.8rem',
+          zIndex: 3
         }}>
-          {slides.map((_, index) => (
+          {slides.map((slide, index) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
               style={{
-                width: '12px',
-                height: '12px',
+                width: '14px',
+                height: '14px',
                 borderRadius: '50%',
                 border: 'none',
-                background: index === currentSlide ? '#FFA726' : 'rgba(255,255,255,0.5)',
+                background: index === currentSlide ? slides[currentSlide].accentColor : 'rgba(255,255,255,0.3)',
                 cursor: 'pointer',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transform: index === currentSlide ? 'scale(1.2)' : 'scale(1)',
+                boxShadow: index === currentSlide ? `0 0 20px ${slides[currentSlide].accentColor}80` : 'none'
               }}
             />
           ))}
         </div>
+
+        {/* Setas de navegação - posicionadas fora do conteúdo */}
+        <button
+          onClick={() => setCurrentSlide((currentSlide - 1 + slides.length) % slides.length)}
+          style={{
+            position: 'absolute',
+            left: '1.5rem',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            background: 'rgba(255,255,255,0.1)',
+            border: 'none',
+            color: 'white',
+            width: '50px',
+            height: '50px',
+            borderRadius: '50%',
+            cursor: 'pointer',
+            backdropFilter: 'blur(10px)',
+            transition: 'all 0.3s ease',
+            fontSize: '1.5rem',
+            zIndex: 3,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.background = 'rgba(255,255,255,0.2)';
+            e.target.style.transform = 'translateY(-50%) scale(1.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = 'rgba(255,255,255,0.1)';
+            e.target.style.transform = 'translateY(-50%) scale(1)';
+          }}
+        >
+          ‹
+        </button>
+        <button
+          onClick={() => setCurrentSlide((currentSlide + 1) % slides.length)}
+          style={{
+            position: 'absolute',
+            right: '1.5rem',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            background: 'rgba(255,255,255,0.1)',
+            border: 'none',
+            color: 'white',
+            width: '50px',
+            height: '50px',
+            borderRadius: '50%',
+            cursor: 'pointer',
+            backdropFilter: 'blur(10px)',
+            transition: 'all 0.3s ease',
+            fontSize: '1.5rem',
+            zIndex: 3,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.background = 'rgba(255,255,255,0.2)';
+            e.target.style.transform = 'translateY(-50%) scale(1.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = 'rgba(255,255,255,0.1)';
+            e.target.style.transform = 'translateY(-50%) scale(1)';
+          }}
+        >
+          ›
+        </button>
       </section>
     );
   };
