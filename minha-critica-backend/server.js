@@ -13,13 +13,32 @@ require('dotenv').config();
 // ==========================================
 const app = express();
 const PORT = process.env.PORT || 3001;
-const JWT_SECRET = process.env.JWT_SECRET || 'secret_padrao';
+const JWT_SECRET = process.env.JWT_SECRET || 'secret_padrao_mude_isso';
 
 // ==========================================
 // MIDDLEWARES
 // ==========================================
-app.use(cors()); // Permite requisições de outros domínios
-app.use(express.json({ limit: '10mb' })); // Entende JSON
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  process.env.FRONTEND_URL, // URL do frontend em produção
+].filter(Boolean); // Remove valores undefined
+
+app.use(cors({
+  origin: function(origin, callback) {
+    // Permite requisições sem origin (mobile apps, postman, etc)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1 && process.env.NODE_ENV === 'production') {
+      const msg = 'CORS policy não permite acesso deste origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
+}));
+
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ==========================================
@@ -28,12 +47,21 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
+  password: process.env.DB_PASSWORD || '', // String vazia para sem senha
   database: process.env.DB_NAME || 'minha_critica',
+  port: process.env.DB_PORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
 };
+
+// Log de configuração (sem mostrar senha em produção)
+console.log('📊 Configuração do Banco de Dados:');
+console.log(`   Host: ${dbConfig.host}`);
+console.log(`   User: ${dbConfig.user}`);
+console.log(`   Database: ${dbConfig.database}`);
+console.log(`   Port: ${dbConfig.port}`);
+console.log(`   Password: ${dbConfig.password ? '***configurada***' : '(sem senha)'}`);
 
 let pool;
 
@@ -42,29 +70,47 @@ let pool;
 // ==========================================
 async function initDB() {
   try {
+    console.log('🔄 Tentando conectar ao MySQL...');
+    
     // Criar pool de conexões
     pool = mysql.createPool(dbConfig);
-    console.log('✅ Conectado ao MySQL!');
     
-    // Criar database se não existir
-    const connection = await mysql.createConnection({
-      host: dbConfig.host,
-      user: dbConfig.user,
-      password: dbConfig.password
-    });
+    // Testar conexão
+    const connection = await pool.getConnection();
+    console.log('✅ Conectado ao MySQL com sucesso!');
+    connection.release();
     
-    await connection.query(`CREATE DATABASE IF NOT EXISTS ${dbConfig.database}`);
-    await connection.end();
+    // Criar database se não existir (apenas em desenvolvimento)
+    if (process.env.NODE_ENV !== 'production') {
+      const tempConnection = await mysql.createConnection({
+        host: dbConfig.host,
+        user: dbConfig.user,
+        password: dbConfig.password,
+        port: dbConfig.port
+      });
+      
+      await tempConnection.query(`CREATE DATABASE IF NOT EXISTS ${dbConfig.database}`);
+      console.log(`✅ Database '${dbConfig.database}' verificada/criada`);
+      await tempConnection.end();
+    }
     
     // Criar tabelas
     await createTables();
   } catch (error) {
     console.error('❌ Erro ao conectar MySQL:', error.message);
-    console.error('Verifique:');
+    console.error('\n🔍 Verifique:');
     console.error('1. MySQL está rodando?');
-    console.error('2. Senha correta no arquivo .env?');
-    console.error('3. Porta 3306 está livre?');
-    process.exit(1);
+    console.error('2. As credenciais estão corretas?');
+    console.error('3. O banco de dados existe (em produção)?');
+    console.error('4. A porta está correta?');
+    console.error('\n💡 Dica: Execute "mysql -u root" para testar a conexão');
+    
+    if (process.env.NODE_ENV === 'production') {
+      console.error('\n⚠️ PRODUÇÃO: Não foi possível conectar ao banco!');
+      process.exit(1);
+    } else {
+      console.error('\n⚠️ DESENVOLVIMENTO: Continuando sem banco (algumas funcionalidades não funcionarão)');
+    }
   }
 }
 
@@ -75,6 +121,8 @@ async function createTables() {
   const connection = await pool.getConnection();
   
   try {
+    console.log('🔨 Criando/verificando tabelas...');
+    
     // Tabela de posts
     await connection.query(`
       CREATE TABLE IF NOT EXISTS posts (
@@ -116,10 +164,11 @@ async function createTables() {
       ON DUPLICATE KEY UPDATE username=username;
     `, [hashedPassword]);
     
-    console.log('✅ Tabelas criadas com sucesso!');
+    console.log('✅ Tabelas criadas/verificadas com sucesso!');
     console.log('👤 Usuário padrão: admin / admin123');
   } catch (error) {
     console.error('❌ Erro ao criar tabelas:', error.message);
+    throw error;
   } finally {
     connection.release();
   }
@@ -346,48 +395,6 @@ app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Importar posts em massa
-app.post('/api/posts/import', authenticateToken, async (req, res) => {
-  try {
-    const { posts } = req.body;
-    
-    if (!Array.isArray(posts)) {
-      return res.status(400).json({ error: 'Posts deve ser um array' });
-    }
-    
-    const connection = await pool.getConnection();
-    await connection.beginTransaction();
-    
-    try {
-      for (const post of posts) {
-        await connection.query(
-          `INSERT INTO posts 
-           (title, category, type, image, excerpt, rating, date, readTime, fullContent, highlights, lowlights) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            post.title, post.category, post.type, post.image,
-            post.excerpt, post.rating || null, post.date,
-            post.readTime, post.fullContent,
-            post.highlights ? JSON.stringify(post.highlights) : null,
-            post.lowlights ? JSON.stringify(post.lowlights) : null
-          ]
-        );
-      }
-      
-      await connection.commit();
-      res.json({ message: `${posts.length} posts importados com sucesso!` });
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-    }
-  } catch (error) {
-    console.error('Erro ao importar posts:', error);
-    res.status(500).json({ error: 'Erro ao importar posts' });
-  }
-});
-
 // Estatísticas
 app.get('/api/stats', authenticateToken, async (req, res) => {
   try {
@@ -413,10 +420,20 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
 // ==========================================
 // ROTA: Health Check
 // ==========================================
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  let dbStatus = 'disconnected';
+  
+  try {
+    await pool.query('SELECT 1');
+    dbStatus = 'connected';
+  } catch (error) {
+    console.error('Health check - DB error:', error.message);
+  }
+  
   res.json({ 
     status: 'ok', 
     message: 'Backend Minha Crítica funcionando!',
+    database: dbStatus,
     timestamp: new Date().toISOString()
   });
 });
@@ -427,11 +444,12 @@ app.get('/api/health', (req, res) => {
 async function startServer() {
   await initDB();
   
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n${'='.repeat(50)}`);
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
     console.log(`📡 API: http://localhost:${PORT}/api`);
     console.log(`💚 Health: http://localhost:${PORT}/api/health`);
+    console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
     console.log(`${'='.repeat(50)}\n`);
     console.log('Para parar o servidor: Ctrl + C\n');
   });
