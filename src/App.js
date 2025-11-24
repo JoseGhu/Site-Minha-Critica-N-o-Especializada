@@ -1,45 +1,84 @@
 import React, { useState, useEffect } from 'react';
 
 // Configuração da API - Conectando com seu backend
-const API_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:3001/api' 
-  : 'https://seu-backend.railway.app/api';
+// ==========================================
+// CONFIGURAÇÃO DA API
+// ==========================================
 
-// Funções da API otimizadas para MySQL
+// Use variável de ambiente se disponível, senão use a URL padrão
+const API_URL = process.env.REACT_APP_API_URL || 
+  (window.location.hostname === 'localhost' 
+    ? 'http://localhost:3001/api' 
+    : 'https://seu-backend-railway.up.railway.app/api'); // ⚠️ SUBSTITUA AQUI!
+
+console.log('🔗 API URL:', API_URL);
+console.log('🌍 Ambiente:', window.location.hostname);
+
+// ==========================================
+// FUNÇÕES DA API
+// ==========================================
 const api = {
   async getPosts() {
     try {
-      console.log('🌐 Conectando com a API MySQL...');
-      const res = await fetch(`${API_URL}/posts`);
-      if (!res.ok) throw new Error('Erro ao buscar posts');
+      console.log('🌐 Conectando com a API MySQL...', API_URL);
+      const res = await fetch(`${API_URL}/posts`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Adiciona timeout para evitar travamento
+        signal: AbortSignal.timeout(10000) // 10 segundos
+      });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+      
       const data = await res.json();
       
       // Salva no localStorage como backup
       localStorage.setItem('minha-critica-posts', JSON.stringify(data));
-      console.log('✅ Posts carregados do MySQL!');
+      console.log('✅ Posts carregados do MySQL!', data.length, 'posts encontrados');
       return data;
     } catch (error) {
-      console.log('❌ Erro na API, usando fallback localStorage...');
+      console.error('❌ Erro na API:', error.message);
+      console.log('📦 Tentando usar fallback localStorage...');
+      
       // Fallback para localStorage
       const localPosts = localStorage.getItem('minha-critica-posts');
-      if (localPosts && JSON.parse(localPosts).length > 0) {
-        return JSON.parse(localPosts);
+      if (localPosts) {
+        try {
+          const posts = JSON.parse(localPosts);
+          if (posts.length > 0) {
+            console.log('✅ Posts carregados do localStorage:', posts.length, 'posts');
+            return posts;
+          }
+        } catch (e) {
+          console.error('Erro ao parsear localStorage:', e);
+        }
       }
+      
       throw new Error('Não foi possível carregar os posts');
     }
   },
   
   async login(username, password) {
+    console.log('🔐 Tentando fazer login...');
     const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
-    if (!res.ok) throw new Error('Usuário ou senha inválidos');
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
+      throw new Error(error.error || 'Usuário ou senha inválidos');
+    }
+    console.log('✅ Login realizado com sucesso!');
     return res.json();
   },
 
   async createPost(postData, token) {
+    console.log('📝 Criando novo post...');
     const res = await fetch(`${API_URL}/posts`, {
       method: 'POST',
       headers: {
@@ -48,11 +87,16 @@ const api = {
       },
       body: JSON.stringify(postData)
     });
-    if (!res.ok) throw new Error('Erro ao criar post');
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
+      throw new Error(error.error || 'Erro ao criar post');
+    }
+    console.log('✅ Post criado com sucesso!');
     return res.json();
   },
 
   async updatePost(postId, postData, token) {
+    console.log('✏️ Atualizando post...');
     const res = await fetch(`${API_URL}/posts/${postId}`, {
       method: 'PUT',
       headers: {
@@ -61,18 +105,27 @@ const api = {
       },
       body: JSON.stringify(postData)
     });
-    if (!res.ok) throw new Error('Erro ao atualizar post');
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
+      throw new Error(error.error || 'Erro ao atualizar post');
+    }
+    console.log('✅ Post atualizado com sucesso!');
     return res.json();
   },
 
   async deletePost(postId, token) {
+    console.log('🗑️ Deletando post...');
     const res = await fetch(`${API_URL}/posts/${postId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`
       }
     });
-    if (!res.ok) throw new Error('Erro ao excluir post');
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
+      throw new Error(error.error || 'Erro ao excluir post');
+    }
+    console.log('✅ Post deletado com sucesso!');
     return res.json();
   }
 };
@@ -1378,7 +1431,7 @@ const Footer = () => {
           borderTop: '1px solid rgba(255,255,255,0.1)'
         }}>
           <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>
-            © 2024 Minha Crítica Não Especializada.
+            © 2025 Minha Crítica Não Especializada.
           </p>
           
           <a 
