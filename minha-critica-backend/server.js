@@ -18,24 +18,44 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret_padrao_mude_isso';
 // ==========================================
 // MIDDLEWARES
 // ==========================================
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3001',
-  process.env.FRONTEND_URL, // URL do frontend em produção
-].filter(Boolean); // Remove valores undefined
 
+// CORS configurado para aceitar o frontend
 app.use(cors({
   origin: function(origin, callback) {
-    // Permite requisições sem origin (mobile apps, postman, etc)
-    if (!origin) return callback(null, true);
+    console.log('🌐 CORS - Origin recebido:', origin);
     
-    if (allowedOrigins.indexOf(origin) === -1 && process.env.NODE_ENV === 'production') {
-      const msg = 'CORS policy não permite acesso deste origin.';
-      return callback(new Error(msg), false);
+    // Lista de origens permitidas
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://site-minha-critica-n-o-especializada-production.up.railway.app',
+      process.env.FRONTEND_URL
+    ].filter(Boolean);
+    
+    // Permite requisições sem origin (Postman, curl, etc)
+    if (!origin) {
+      console.log('✅ CORS - Permitindo requisição sem origin');
+      return callback(null, true);
     }
-    return callback(null, true);
+    
+    // Verifica se a origin está na lista permitida
+    if (allowedOrigins.includes(origin)) {
+      console.log('✅ CORS - Origin permitida:', origin);
+      return callback(null, true);
+    }
+    
+    // Em desenvolvimento, permite tudo
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('✅ CORS - Modo desenvolvimento, permitindo:', origin);
+      return callback(null, true);
+    }
+    
+    console.log('❌ CORS - Origin bloqueada:', origin);
+    callback(new Error('CORS policy: Origin não permitida'), false);
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json({ limit: '10mb' }));
