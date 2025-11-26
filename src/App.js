@@ -9,7 +9,7 @@ import React, { useState, useEffect } from 'react';
 const API_URL = process.env.REACT_APP_API_URL || 
   (window.location.hostname === 'localhost' 
     ? 'http://localhost:3001/api' 
-    : 'https://seu-backend-railway.up.railway.app/api'); // ⚠️ SUBSTITUA AQUI!
+    : 'https://site-minha-critica-n-o-especializada-production.up.railway.app/api');
 
 console.log('🔗 API URL:', API_URL);
 console.log('🌍 Ambiente:', window.location.hostname);
